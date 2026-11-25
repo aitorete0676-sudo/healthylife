@@ -181,6 +181,26 @@ svg text{font:13px Archivo,system-ui,sans-serif;fill:var(--mute)}
 .acts2{display:flex;gap:4px;align-items:center}
 .composer input{border:1px solid var(--line);border-radius:14px;padding:11px 12px;font-size:16px;background:var(--bg)}
 .sug{margin-top:14px}
+.sug .rem{margin:4px 0 12px;color:var(--mute);font-size:15px}
+.sug .rem b{color:var(--ink);white-space:nowrap}
+.rform{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:end}
+.rform label{display:grid;gap:4px;font-size:13px;color:var(--mute)}
+.rform input,.rform select{border:1px solid var(--line);border-radius:10px;padding:9px 10px;font-size:16px;background:var(--bg);color:var(--ink);width:100%}
+.rform .have{grid-column:1/-1}
+.rform .btn{grid-column:1/-1}
+.recipe{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:14px;display:grid;gap:10px}
+.recipe h3{font-size:20px;font-weight:800}
+.recipe .rd{margin:0;color:var(--mute);font-size:14px}
+.fit{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.fit div{background:var(--panel);border-radius:10px;padding:8px 10px;font-size:12px;color:var(--mute)}
+.fit b{display:block;font-size:18px;color:var(--ink);white-space:nowrap}
+.fit div:first-child b{color:var(--hot)}
+.rcols{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+.rcols h4{margin:0 0 4px;font-size:15px}
+.rcols ul,.rcols ol{margin:0;padding-left:20px;font-size:15px;display:grid;gap:4px}
+.rcols small{color:var(--mute);white-space:nowrap}
+@media(min-width:700px){.rcols{grid-template-columns:minmax(0,1fr) minmax(0,1.3fr)}.rform{grid-template-columns:1.2fr .8fr .8fr 2fr auto}.rform .have{grid-column:auto}.rform .btn{grid-column:auto}}
+@media(max-width:420px){.fit{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .sug-h{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between}
 .sug h2{font-size:22px;font-weight:800}
 .sug-h p{margin:4px 0 0;color:var(--mute);font-size:15px}
@@ -374,15 +394,7 @@ function renderHoy(){
     </div>
   </div>
 
-  <div class="card sug">
-    <div class="sug-h"><div><h2>¿Qué como?</h2><p>Te quedan <b>${fmt(Math.max(0,left))} kcal</b> · P <b>${Math.max(0,r0(T.p-t.p))} g</b> · C <b>${Math.max(0,r0(T.c-t.c))} g</b> · G <b>${Math.max(0,r0(T.f-t.f))} g</b></p></div>
-    <div class="sug-c"><select id="sugmeal" aria-label="Momento">${MEALS.map(([k,n])=>`<option value="${k}" ${k===(SG.meal||mealNow())?'selected':''}>${n}</option>`).join('')}</select><button class="btn hot" id="sugbtn" ${SG.busy?'disabled':''}>${SG.busy?'Pensando…':SG.list.length?'Otras opciones':'Dame opciones'}</button></div></div>
-    ${SG.err?`<p class="empty">${esc(SG.err)}</p>`:''}
-    ${SG.list.length?`<div class="opts">${SG.list.map((o,i)=>`<div class="opt"><h3>${esc(o.nombre)}</h3><p>${esc(o.descripcion||'')}</p>
-      <div class="om"><b>${fmt(o.kcal)} kcal</b><span>P ${r0(o.p)} g</span><span>C ${r0(o.c)} g</span><span>G ${r0(o.f)} g</span>${o.min?`<span>${r0(o.min)} min</span>`:''}</div>
-      <ul>${o.ing.map(x=>`<li>${esc(x.name)} <small>${esc(x.qty)}</small></li>`).join('')}</ul>
-      <button class="btn ghost" data-sugadd="${i}">Apuntar en ${mealName(SG.meal)}</button></div>`).join('')}</div>`:''}
-  </div>
+  ${recipeCard()}
   <div class="secthead"><h2>Comidas</h2><span>${fmt(t.kcal)} kcal</span></div>
   <button class="btn hot addbig" data-sheet="${mealNow()}">+ Añadir alimento</button>
   ${foodsBy.filter(m=>m.it.length||m.k!=='snack').map(m=>`<div class="meal"><h3>${m.n}<span>${m.kc?fmt(m.kc)+' kcal':''}<button class="plus" data-sheet="${m.k}" aria-label="Añadir a ${m.n}">+</button></span></h3>
@@ -404,32 +416,61 @@ function renderHoy(){
 }
 const MET={Fuerza:5,Cardio:8,Deporte:7,Movilidad:2.5,Otro:4};
 
-const SG={list:[],busy:false,err:'',meal:null};
-async function suggest(){
-  if(SG.busy)return;
-  if(!sample){SG.err='Las opciones con IA solo están en la versión de Claude (gratis con tu cuenta).';renderHoy();return}
-  SG.meal=($('#sugmeal')||{}).value||mealNow();SG.busy=true;SG.err='';renderHoy();
-  const t=totals(today()),T=targets(),p=S.profile||{};
-  const left={kcal:T.kcal+(p.addExercise?t.burn:0)-t.kcal,p:T.p-t.p,c:T.c-t.c,f:T.f-t.f};
-  const prev=SG.list.map(o=>o.nombre).join(', ');
-  const prompt=`Propón 3 opciones de ${mealName(SG.meal).toLowerCase()} para una persona en España que sigue un plan de cambio físico.
-Le quedan hoy: ${r0(left.kcal)} kcal, proteína ${r0(left.p)} g, carbohidratos ${r0(left.c)} g, grasa ${r0(left.f)} g.
-${left.kcal<150?'Le quedan muy pocas kcal: propone opciones muy ligeras (menos de 250 kcal) y ricas en proteína.':'Cada opción debe cubrir la mayor parte de lo que le queda sin pasarse más de un 10 % en kcal, priorizando llegar a la proteína.'}
-Objetivo: ${p.goal||'mantener'}. Notas: ${p.notes||'—'}.
-Memoria sobre la persona: ${(S.mem.notes||[]).map(n=>n.text).join('; ')||'—'}.
-Alimentos que suele comer (úsalos si encajan): ${(S.lib.items||[]).slice().sort((a,b)=>(b.uses||0)-(a.uses||0)).slice(0,25).map(x=>x.name).join(', ')||'—'}.
-Ya ha comido hoy: ${day(today()).foods.map(x=>x.name).join(', ')||'nada'}.
-${prev?'No repitas estas: '+prev+'.':''}
-Platos sencillos, ingredientes de supermercado español, cantidades en gramos. Valores nutricionales de referencia BEDCA/USDA, coherentes con los ingredientes.
-Responde SOLO con JSON: {"opciones":[{"nombre":"","descripcion":"una frase","minutos":0,"ingredientes":[{"nombre":"","cantidad":"120 g","kcal":0,"proteina":0,"carbohidratos":0,"grasa":0}]}]}`;
-  try{
-    const r=await sample.json(prompt,{cache:false});
-    const list=(r&&Array.isArray(r.opciones)?r.opciones:[]).slice(0,3).map(o=>{const ing=(Array.isArray(o.ingredientes)?o.ingredientes:[]).slice(0,12).map(a=>({name:String(a.nombre||'').slice(0,80),qty:String(a.cantidad||'').slice(0,40),kcal:r0(a.kcal),p:r1(a.proteina),c:r1(a.carbohidratos),f:r1(a.grasa)})).filter(a=>a.name);
-      return{nombre:String(o.nombre||'Opción').slice(0,80),descripcion:String(o.descripcion||'').slice(0,200),min:r0(o.minutos),ing,kcal:ing.reduce((s,a)=>s+a.kcal,0),p:ing.reduce((s,a)=>s+a.p,0),c:ing.reduce((s,a)=>s+a.c,0),f:ing.reduce((s,a)=>s+a.f,0)}}).filter(o=>o.ing.length);
-    SG.list=list;if(!list.length)SG.err='No he recibido opciones. Prueba otra vez.';
-  }catch(e){SG.err=ERR[e&&e.code]||'No he podido generar opciones ('+(e&&e.code||'error')+').'}
-  SG.busy=false;renderHoy();
+const RC={busy:false,err:'',r:null,meal:null,tk:null,tp:null,have:'',prev:[]};
+function remaining(){const t=totals(today()),T=targets(),p=S.profile||{};return{kcal:Math.max(0,r0(T.kcal+(p.addExercise?t.burn:0)-t.kcal)),p:Math.max(0,r0(T.p-t.p)),c:Math.max(0,r0(T.c-t.c)),f:Math.max(0,r0(T.f-t.f))}}
+function recipeCard(){
+  const L=remaining(),r=RC.r,meal=RC.meal||mealNow();
+  return `<div class="card sug" id="recipe">
+    <h2>Receta para tus macros</h2>
+    <p class="rem">Hoy te quedan <b>${fmt(L.kcal)} kcal</b> · proteína <b>${L.p} g</b> · carbos <b>${L.c} g</b> · grasa <b>${L.f} g</b></p>
+    <form class="rform" id="f-rec">
+      <label>Para<select name="meal">${MEALS.map(([k,n])=>`<option value="${k}" ${k===meal?'selected':''}>${n}</option>`).join('')}</select></label>
+      <label>kcal<input name="tk" type="number" inputmode="numeric" min="100" value="${RC.tk??L.kcal}"></label>
+      <label>Proteína (g)<input name="tp" type="number" inputmode="numeric" min="0" value="${RC.tp??L.p}"></label>
+      <label class="have">¿Qué tienes en casa? (opcional)<input name="have" placeholder="pollo, arroz, pimiento…" value="${esc(RC.have)}"></label>
+      <button class="btn hot" ${RC.busy?'disabled':''}>${RC.busy?'Creando receta…':r?'Otra receta':'Hazme una receta'}</button>
+    </form>
+    ${RC.err?`<p class="empty">${esc(RC.err)}</p>`:''}
+    ${r?`<div class="recipe">
+      <h3>${esc(r.nombre)}</h3><p class="rd">${esc(r.descripcion)}${r.min?` · ${r.min} min`:''}</p>
+      <div class="fit">${[['kcal',r.kcal,r.tk,''],['Proteína',r.p,r.tp,' g'],['Carbos',r.c,null,' g'],['Grasa',r.f,null,' g']].map(([n,v,g,u])=>`<div><b>${fmt(v)}${u}</b><span>${n}${g?` · objetivo ${fmt(g)}${u}`:''}</span></div>`).join('')}</div>
+      ${r.scaled?'<p class="rd">Cantidades ajustadas para clavar tus kcal.</p>':''}
+      <div class="rcols"><div><h4>Ingredientes</h4><ul>${r.ing.map(x=>`<li><b>${fmt(x.g)} g</b> ${esc(x.name)} <small>${fmt(x.kcal)} kcal · P ${r0(x.p)}</small></li>`).join('')}</ul></div>
+      <div><h4>Preparación</h4><ol>${r.pasos.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></div></div>
+      <button class="btn" data-recadd="1">Apuntar en ${mealName(r.meal)}</button>
+    </div>`:''}
+  </div>`;
 }
+async function makeRecipe(f){
+  if(RC.busy)return;
+  const fd=new FormData(f);RC.meal=String(fd.get('meal')||mealNow());RC.tk=r0(fd.get('tk'))||null;RC.tp=r0(fd.get('tp'));RC.have=String(fd.get('have')||'').slice(0,200);
+  if(!sample){RC.err='El asistente no está disponible aquí.';rerenderRecipe();return}
+  const L=remaining(),tk=RC.tk||L.kcal,tp=RC.tp??L.p,p=S.profile||{};
+  if(tk<100){RC.err='Pon al menos 100 kcal para la receta.';rerenderRecipe();return}
+  RC.busy=true;RC.err='';rerenderRecipe();
+  const prompt=`Crea UNA receta de ${mealName(RC.meal).toLowerCase()} para 1 persona en España.
+Objetivo de la receta: ${tk} kcal (margen ±5 %) y al menos ${tp} g de proteína.
+Orientativo (lo que le queda hoy): carbohidratos ${L.c} g, grasa ${L.f} g. Si la proteína pedida es alta para esas kcal, usa fuentes magras (pollo, pavo, claras, atún, queso batido, skyr, legumbres).
+${RC.have?'Usa sobre todo estos ingredientes que tiene en casa: '+RC.have+'. Puedes añadir básicos de despensa (aceite, especias, sal).':'Ingredientes fáciles de encontrar en un supermercado español.'}
+Objetivo físico: ${p.goal||'mantener'}. Notas: ${p.notes||'—'}. Le gusta / no le gusta: ${(S.mem.notes||[]).map(n=>n.text).join('; ')||'—'}.
+Ya ha comido hoy: ${day(today()).foods.map(x=>x.name).join(', ')||'nada'}.
+${RC.prev.length?'Que sea distinta de: '+RC.prev.join(', ')+'.':''}
+Cantidades en gramos (en crudo o en seco cuando aplique). Valores nutricionales de referencia BEDCA/USDA, coherentes con los gramos. Comprueba que la suma de kcal y proteína de los ingredientes cumple el objetivo. Máximo 6 pasos cortos.
+Responde SOLO con JSON: {"nombre":"","descripcion":"una frase","minutos":0,"ingredientes":[{"nombre":"","gramos":0,"kcal":0,"proteina":0,"carbohidratos":0,"grasa":0}],"pasos":[""]}`;
+  try{
+    const o=await sample.json(prompt,{cache:false});
+    let ing=(o&&Array.isArray(o.ingredientes)?o.ingredientes:[]).slice(0,15).map(a=>({name:String(a.nombre||'').slice(0,80),g:Number(a.gramos)||0,kcal:Number(a.kcal)||0,p:Number(a.proteina)||0,c:Number(a.carbohidratos)||0,f:Number(a.grasa)||0})).filter(a=>a.name);
+    if(!ing.length)throw{code:'empty'};
+    const tot=ing.reduce((s,a)=>s+a.kcal,0);let scaled=false;
+    if(tot>0){const k=tk/tot;if(k>=0.7&&k<=1.4&&Math.abs(k-1)>0.03){scaled=true;ing=ing.map(a=>({...a,g:Math.max(1,Math.round(a.g*k/5)*5||Math.round(a.g*k)),kcal:a.kcal*k,p:a.p*k,c:a.c*k,f:a.f*k}))}}
+    ing=ing.map(a=>({...a,kcal:r0(a.kcal),p:r1(a.p),c:r1(a.c),f:r1(a.f)}));
+    const sum=k=>ing.reduce((s,a)=>s+a[k],0);
+    RC.r={nombre:String(o.nombre||'Receta').slice(0,80),descripcion:String(o.descripcion||'').slice(0,200),min:r0(o.minutos),pasos:(Array.isArray(o.pasos)?o.pasos:[]).slice(0,8).map(x=>String(x).slice(0,300)),ing,kcal:sum('kcal'),p:sum('p'),c:sum('c'),f:sum('f'),tk,tp,scaled,meal:RC.meal};
+    RC.prev=[...RC.prev,RC.r.nombre].slice(-5);
+  }catch(e){RC.err=e&&e.code==='empty'?'No he recibido una receta válida. Prueba otra vez.':(ERR[e&&e.code]||'No he podido crear la receta ('+(e&&e.code||'error')+').')}
+  RC.busy=false;rerenderRecipe();
+}
+function rerenderRecipe(){document.querySelectorAll('#recipe').forEach(el=>{const w=document.createElement('div');w.innerHTML=recipeCard();el.replaceWith(w.firstElementChild)})}
 /* ---------- PROGRESO ---------- */
 function renderProg(){
   const host=$('#v-prog');const T=targets();const t0=today();
@@ -538,7 +579,7 @@ function renderPerfil(){
 function md(t){
   return esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').split('\n').map(l=>/^\s*[-•*] /.test(l)?'<li>'+l.replace(/^\s*[-•*] /,'')+'</li>':l.trim()?'<p>'+l+'</p>':'').join('').replace(/(?:<li>[\s\S]*?<\/li>)+/g,m=>'<ul>'+m+'</ul>');
 }
-const CHIPS=['He desayunado 2 huevos revueltos y una tostada con aceite','Recuerda que no me gusta el pescado','Hoy he hecho 50 min de pesas, pierna','¿Cuánta proteína tiene un yogur griego?','¿Cómo voy esta semana?'];
+const CHIPS=['He desayunado 2 huevos revueltos y una tostada con aceite','Hazme una receta con lo que me queda hoy','Hoy he hecho 50 min de pesas, pierna','¿Cuánta proteína tiene un yogur griego?','¿Cómo voy esta semana?'];
 function renderChat(streamText){
   const box=$('#msgs');const turns=S.chat.turns||[];
   let h='';
@@ -579,6 +620,7 @@ Reglas:
 - Para preguntas sobre su evolución usa resumen_periodo.
 - Tras apuntar, di en una o dos líneas qué apuntaste y cuántas kcal y gramos de proteína le quedan hoy.
 - Al recomendar comidas, ajústalas a las kcal y proteína que le quedan, con cantidades en gramos.
+- Si pide una receta, créala para que sume las kcal y la proteína que le quedan (o las que pida), con ingredientes en gramos, macros totales y pasos cortos. Si quiere, apúntala con registrar_comida como un solo plato.
 - No eres médico. Ante dolor, mareos, lesiones, medicación o señales de trastorno alimentario, recomienda consultar a un profesional. No propongas dietas por debajo de ${T.floor} kcal ni perder más del 1 % del peso por semana.`;
 }
 function tools(acts){
@@ -657,7 +699,8 @@ function renderLib(){
   const host=$('#v-lib');if(host.contains(document.activeElement)&&document.activeElement.matches('input'))return;
   const items=libItems().sort((a,b)=>(b.uses||0)-(a.uses||0)),notes=S.mem.notes||[];
   host.innerHTML=`<h2 class="ttl">Mis alimentos</h2>
-  <p class="hint" style="margin:0 0 14px">Se guardan solos cuando apuntas algo, a mano o con el asistente. El asistente usa estos valores antes que los suyos. Para cambiar uno, créalo otra vez con el mismo nombre.</p>
+  ${recipeCard()}
+  <p class="hint" style="margin:14px 0">Se guardan solos cuando apuntas algo, a mano o con el asistente. El asistente usa estos valores antes que los suyos. Para cambiar uno, créalo otra vez con el mismo nombre.</p>
   <button class="btn hot addbig" data-sheet="${mealNow()}">+ Añadir o crear alimento</button>
   ${items.length?items.map(x=>`<div class="row lib"><div class="n">${esc(x.name)}<small>${esc(x.unit==='g'?'por 100 g':'por '+x.label)} · P ${r0(x.p)} · C ${r0(x.c)} · G ${r0(x.f)} · ${x.uses||0} ${x.uses===1?'vez':'veces'}</small></div><div class="k">${fmt(x.kcal)} kcal</div><div class="acts2"><button class="ib" data-sheet-pick="${esc(x.id)}">Añadir</button><button class="x" data-del-lib="${esc(x.id)}" aria-label="Borrar ${esc(x.name)}">×</button></div></div>`).join(''):'<div class="empty">Aún no hay alimentos guardados. Apunta algo y aparecerá aquí.</div>'}
   <div class="secthead"><h2>Memoria del asistente</h2><span>${notes.length} datos</span></div>
@@ -744,8 +787,8 @@ document.addEventListener('click',e=>{
   if(b.dataset.delFood){const d=editDay(S.date);d.foods=d.foods.filter(x=>x.id!==b.dataset.delFood);saveDay(S.date);renderHoy();renderProg()}
   if(b.dataset.delWo){const d=editDay(S.date);d.workouts=d.workouts.filter(x=>x.id!==b.dataset.delWo);saveDay(S.date);renderHoy();renderProg()}
   if(b.closest('#chips')){send(b.textContent)}
-  if(b.id==='sugbtn')suggest();
-  if(b.dataset.sugadd){const o=SG.list[+b.dataset.sugadd];if(o){const d=editDay(today());const items=o.ing.map(x=>({id:uid(),meal:SG.meal,...x}));d.foods.push(...items);saveDay(today());upsertLib(items.map(x=>({name:x.name,unit:'ud',base:1,def:1,label:x.qty||'1 ración',kcal:x.kcal,p:x.p,c:x.c,f:x.f})));toast(`Apuntado: ${o.nombre}, ${fmt(o.kcal)} kcal`);SG.list=[];if(S.date!==today())S.date=today();render()}}
+  if(b.dataset.recadd&&RC.r){const r=RC.r;const it={id:uid(),meal:r.meal,name:r.nombre,qty:'1 ración (receta)',kcal:r0(r.kcal),p:r1(r.p),c:r1(r.c),f:r1(r.f)};const d=editDay(today());d.foods.push(it);saveDay(today());
+    upsertLib([{name:r.nombre,unit:'ud',base:1,def:1,label:'1 ración (receta)',kcal:it.kcal,p:it.p,c:it.c,f:it.f}]);toast(`Apuntado: ${r.nombre}, ${fmt(r.kcal)} kcal`);RC.r=null;RC.tk=null;RC.tp=null;if(S.date!==today())S.date=today();render()}
   if(b.dataset.sheet)openSheet(b.dataset.sheet);
   if(b.dataset.sheetPick)openSheet(mealNow(),b.dataset.sheetPick);
   if(b.dataset.shmeal){shMeal=b.dataset.shmeal;document.querySelectorAll('#shmeal button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)))}
@@ -780,6 +823,7 @@ document.addEventListener('submit',e=>{
     if(!it.name)return;upsertLib([it]);const saved=(S.lib.items||[]).find(x=>norm(x.name)===norm(it.name));
     if(fd.get('now')==='on'&&saved)addFromItem({...saved,mine:true},1,true);else{toast('Guardado en Mis alimentos');renderSheet()}
     f.reset();$('#shnew').open=false;return}
+  if(f.id==='f-rec'){document.activeElement&&document.activeElement.blur();makeRecipe(f);return}
   if(f.id==='f-mem'){const t=String(new FormData(f).get('t')||'').trim();if(t){document.activeElement&&document.activeElement.blur();addMem(t)}return}
   const fd=new FormData(f);const d=editDay(S.date);
   if(f.id==='f-food')d.foods.push({id:uid(),meal:fd.get('meal'),name:String(fd.get('name')).slice(0,80),qty:String(fd.get('qty')||'').slice(0,40),kcal:r0(fd.get('kcal')),p:r1(fd.get('p')),c:r1(fd.get('c')),f:r1(fd.get('f'))});
