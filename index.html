@@ -448,6 +448,16 @@ function recipeCard(){
     </div>`).join('')}</div>`:''}
   </div>`;
 }
+/* Ajusta la cantidad de cada ingrediente (entre x0,5 y x1,8) para acercar la receta a los macros pedidos */
+function fitMacros(ing,tg){
+  const keys=['kcal','p','c','f'].filter(k=>tg[k]);if(!ing.length||!keys.length)return ing;
+  const sc=ing.map(()=>1);
+  const err=()=>keys.reduce((e,k)=>{const v=ing.reduce((s,a,i)=>s+a[k]*sc[i],0);return e+((v-tg[k])/tg[k])**2*(k==='kcal'?2:1)},0)+sc.reduce((e,x)=>e+0.02*(x-1)**2,0);
+  for(let it=0;it<60;it++){let moved=false;
+    for(let i=0;i<sc.length;i++){for(const d of[0.1,-0.1,0.03,-0.03]){const o=sc[i],n=Math.min(1.8,Math.max(0.5,o+d));if(n===o)continue;const e0=err();sc[i]=n;if(err()<e0-1e-9)moved=true;else sc[i]=o}}
+    if(!moved)break}
+  return ing.map((a,i)=>{const g=a.g>0?Math.max(5,Math.round(a.g*sc[i]/5)*5):0;const k=a.g>0?g/a.g:sc[i];return{...a,g:g||a.g,kcal:r0(a.kcal*k),p:r1(a.p*k),c:r1(a.c*k),f:r1(a.f*k)}});
+}
 async function makeRecipe(f){
   if(RC.busy)return;
   const fd=new FormData(f);RC.meal=String(fd.get('meal')||mealNow());RC.have=String(fd.get('have')||'').slice(0,200);
@@ -473,9 +483,7 @@ Responde SOLO con JSON: {"recetas":[{"nombre":"","descripcion":"una frase","minu
     const arr=o&&Array.isArray(o.recetas)?o.recetas:(Array.isArray(o)?o:[]);
     const list=arr.slice(0,3).map(x=>{
       let ing=(Array.isArray(x.ingredientes)?x.ingredientes:[]).slice(0,15).map(a=>({name:String(a.nombre||'').slice(0,80),g:Number(a.gramos)||0,kcal:Number(a.kcal)||0,p:Number(a.proteina)||0,c:Number(a.carbohidratos)||0,f:Number(a.grasa)||0})).filter(a=>a.name);
-      const tot=ing.reduce((s,a)=>s+a.kcal,0);
-      if(tot>0){const k=tg.kcal/tot;if(k>=0.7&&k<=1.4&&Math.abs(k-1)>0.03)ing=ing.map(a=>({...a,g:Math.max(1,Math.round(a.g*k/5)*5||Math.round(a.g*k)),kcal:a.kcal*k,p:a.p*k,c:a.c*k,f:a.f*k}))}
-      ing=ing.map(a=>({...a,kcal:r0(a.kcal),p:r1(a.p),c:r1(a.c),f:r1(a.f)}));
+      ing=fitMacros(ing,tg);
       const sum=k=>ing.reduce((s,a)=>s+a[k],0);
       return{nombre:String(x.nombre||'Receta').slice(0,80),descripcion:String(x.descripcion||'').slice(0,200),min:r0(x.minutos),pasos:(Array.isArray(x.pasos)?x.pasos:[]).slice(0,8).map(y=>String(y).slice(0,300)),ing,kcal:sum('kcal'),p:sum('p'),c:sum('c'),f:sum('f'),meal:RC.meal}}).filter(r=>r.ing.length);
     if(!list.length)throw{code:'empty'};
