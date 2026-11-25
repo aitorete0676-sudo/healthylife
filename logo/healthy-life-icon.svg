@@ -8,10 +8,10 @@
   <circle cx="512" cy="512" r="300" fill="none" stroke="#262a31" stroke-width="96"/>
   <!-- arc ~290deg from top, clockwise -->
   <path d="M512 212 A300 300 0 1 1 228.1 415.7" fill="none" stroke="url(#arc)" stroke-width="96" stroke-linecap="round"/>
-  <g transform="translate(512 540)">
-    <path d="M0 -120 C -40 -165 -200 -170 -205 -10 C -210 120 -110 205 -50 185 C -25 177 25 177 50 185 C 110 205 210 120 205 -10 C 200 -170 40 -165 0 -120 Z" fill="url(#leaf)"/>
-    <path d="M-120 -60 C -135 -20 -130 30 -110 60" stroke="#ffffff" stroke-opacity=".35" stroke-width="26" fill="none" stroke-linecap="round"/>
-    <path d="M0 -118 C 0 -160 10 -190 30 -215" stroke="#6b3e1f" stroke-width="26" fill="none" stroke-linecap="round"/>
-    <path d="M28 -170 C 60 -230 130 -230 150 -205 C 120 -160 60 -150 28 -170 Z" fill="#1fb86a"/>
+  <g transform="translate(512 525) rotate(-28)">
+    <path d="M0 -215 C 70 -215 95 -130 120 -40 C 160 90 100 200 0 200 C -100 200 -160 90 -120 -40 C -95 -130 -70 -215 0 -215 Z" fill="#1d7a45"/>
+    <path d="M0 -180 C 52 -180 72 -110 93 -30 C 125 80 78 168 0 168 C -78 168 -125 80 -93 -30 C -72 -110 -52 -180 0 -180 Z" fill="#c9ea7a"/>
+    <circle cx="0" cy="70" r="70" fill="#8a5426"/>
+    <circle cx="-20" cy="50" r="18" fill="#ffffff" fill-opacity=".3"/>
   </g>
 </svg>
