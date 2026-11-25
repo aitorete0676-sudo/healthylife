@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1c1f25"/><stop offset="1" stop-color="#0c0d10"/></linearGradient>
+    <linearGradient id="arc" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff7a3d"/><stop offset="1" stop-color="#ff3b2b"/></linearGradient>
+    <linearGradient id="leaf" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#1fb86a"/><stop offset="1" stop-color="#7ee36d"/></linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <circle cx="512" cy="512" r="300" fill="none" stroke="#262a31" stroke-width="96"/>
+  <!-- arc ~290deg from top, clockwise -->
+  <path d="M512 212 A300 300 0 1 1 228.1 415.7" fill="none" stroke="url(#arc)" stroke-width="96" stroke-linecap="round"/>
+  <!-- leaf -->
+  <g transform="translate(512 524) rotate(-40) scale(1.18)">
+    <path d="M0 -190 C 120 -120 120 90 0 170 C -120 90 -120 -120 0 -190 Z" fill="url(#leaf)"/>
+    <path d="M0 -150 L0 150" stroke="#0f3d24" stroke-opacity=".55" stroke-width="16" stroke-linecap="round"/>
+    <path d="M0 -40 L48 -86 M0 30 L56 -20 M0 -40 L-48 -86 M0 30 L-56 -20" stroke="#0f3d24" stroke-opacity=".4" stroke-width="12" stroke-linecap="round"/>
+  </g>
+</svg>
