@@ -1,6 +1,26 @@
 // Función de Vercel: puente entre la app y Gemini (plan gratuito de Google AI Studio).
 // La clave GEMINI_API_KEY vive solo en Vercel; el navegador nunca la ve.
-const MODEL = process.env.GEMINI_MODEL || "gemini-flash-latest";
+// Prueba varios modelos: si uno está saturado o no existe, pasa al siguiente.
+export const config = { maxDuration: 60 };
+
+const MODELS = (process.env.GEMINI_MODEL ? [process.env.GEMINI_MODEL] : []).concat([
+  "gemini-flash-lite-latest",
+  "gemini-flash-latest",
+  "gemini-2.5-flash-lite",
+  "gemini-2.5-flash",
+]);
+const RETRY = new Set([404, 429, 500, 503, 504]);
+
+async function ask(model, body, useThinking) {
+  const b = useThinking ? { ...body, generationConfig: { ...(body.generationConfig || {}), thinkingConfig: { thinkingBudget: 0 } } } : body;
+  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY },
+    body: JSON.stringify(b),
+  });
+  const data = await r.json().catch(() => ({}));
+  return { status: r.status, ok: r.ok, data };
+}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ code: "bad_request", error: "Solo POST" });
@@ -16,19 +36,23 @@ export default async function handler(req, res) {
   if (Array.isArray(tools) && tools.length) body.tools = [{ functionDeclarations: tools.slice(0, 20) }];
   if (json) body.generationConfig = { responseMimeType: "application/json" };
 
+  let last = null;
   try {
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODEL)}:generateContent`, {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY },
-      body: JSON.stringify(body),
-    });
-    const data = await r.json().catch(() => ({}));
-    if (r.status === 429) return res.status(429).json({ code: "rate_limited", error: "Límite gratuito alcanzado" });
-    if (r.status === 400 || r.status === 403) return res.status(r.status).json({ code: r.status === 403 ? "no_key" : "api_error", error: data?.error?.message || "Error" });
-    if (!r.ok) return res.status(502).json({ code: "api_error", error: data?.error?.message || `Error ${r.status}` });
-    const cand = data.candidates?.[0];
-    return res.status(200).json({ content: cand?.content || { role: "model", parts: [] }, finishReason: cand?.finishReason || "" });
+    for (const model of MODELS) {
+      // Primero sin "pensar" (más rápido); si el modelo no acepta esa opción, se repite normal.
+      let r = await ask(model, body, true);
+      if (r.status === 400) r = await ask(model, body, false);
+      if (r.ok) {
+        const cand = r.data.candidates?.[0];
+        return res.status(200).json({ model, content: cand?.content || { role: "model", parts: [] }, finishReason: cand?.finishReason || "" });
+      }
+      last = r;
+      if (r.status === 403) return res.status(403).json({ code: "no_key", error: r.data?.error?.message || "Clave no válida" });
+      if (!RETRY.has(r.status)) break;
+    }
   } catch {
     return res.status(500).json({ code: "api_error", error: "Error inesperado" });
   }
+  const st = last?.status;
+  return res.status(st === 429 ? 429 : 502).json({ code: st === 429 ? "rate_limited" : st === 503 ? "busy" : "api_error", error: last?.data?.error?.message || "Error" });
 }
