@@ -345,10 +345,13 @@ function save(key,data){
 }
 const saveDay=date=>save('day_'+date,S.days[date]);
 
+const STEP_BASE=4000;
 function totals(date){
   const d=day(date);const t={kcal:0,p:0,c:0,f:0,burn:0,min:0};
   d.foods.forEach(x=>{t.kcal+=+x.kcal||0;t.p+=+x.p||0;t.c+=+x.c||0;t.f+=+x.f||0});
   d.workouts.forEach(w=>{t.burn+=+w.kcal||0;t.min+=+w.min||0});
+  // Pasos: solo los que pasan de 4.000 (el nivel sedentario ya cuenta esos). ≈0,0005 kcal por paso y kg.
+  t.stepsK=d.steps>STEP_BASE?r0((d.steps-STEP_BASE)*0.0005*(curWeight(date)||75)):0;t.burn+=t.stepsK;
   return t;
 }
 function curWeight(before){
@@ -409,7 +412,7 @@ function renderHoy(){
     ${m.it.map(x=>`<div class="row"><div class="n">${esc(x.name)}<small>${x.qty?esc(x.qty)+' · ':''}P ${r0(x.p)} · C ${r0(x.c)} · G ${r0(x.f)}</small></div><div class="k">${fmt(x.kcal)}</div><button class="x" data-del-food="${esc(x.id)}" aria-label="Borrar ${esc(x.name)}">×</button></div>`).join('')}</div>`).join('')}
   <p class="hint">O <button data-go="chat">díselo al asistente</button>: «he comido un plato de macarrones con tomate». Lo que apuntas se guarda en Mis alimentos.</p>
 
-  <div class="secthead"><h2>Entrenamiento</h2><span>${fmt(t.min)} min · ${fmt(t.burn)} kcal</span></div>
+  <div class="secthead"><h2>Entrenamiento</h2><span>${fmt(t.min)} min · ${fmt(t.burn-t.stepsK)} kcal${t.stepsK?` · pasos +${fmt(t.stepsK)}`:''}</span></div>
   ${d.workouts.length?d.workouts.map(w=>`<div class="row" style="border-top:1px solid var(--line)"><div class="n"><b>${esc(w.name)}</b><small>${esc(w.type)} · ${r0(w.min)} min${w.detail?' · '+esc(w.detail):''}</small></div><div class="k">${fmt(w.kcal)} kcal</div><button class="x" data-del-wo="${esc(w.id)}" aria-label="Borrar entreno">×</button></div>`).join('')
   :`<div class="empty">Sin entrenos este día.</div>`}
   <details class="add"><summary>Añadir entreno</summary>
@@ -603,7 +606,7 @@ function renderPerfil(){
     <label class="half">Objetivo${sel('goal',[['perder','Perder grasa (−500 kcal, ~0,5 kg/sem.)'],['suave','Definir suave (−300 kcal)'],['mantener','Mantener / recomposición'],['ganar','Ganar músculo (+250 kcal)']],p.goal||'mantener')}</label>
     <label>Proteína (g/kg)<input name="protPerKg" type="number" inputmode="decimal" step="0.1" value="${esc(p.protPerKg??'2')}"></label>
     <label>kcal manual<input name="kcalOverride" type="number" inputmode="numeric" placeholder="auto" value="${esc(p.kcalOverride??'')}"></label>
-    <label class="full check"><input type="checkbox" name="addExercise" ${p.addExercise?'checked':''}> Sumar las kcal del ejercicio al objetivo del día. Déjalo desactivado si tu nivel de actividad ya cuenta tus entrenos.</label>
+    <label class="full check"><input type="checkbox" name="addExercise" ${p.addExercise?'checked':''}> Sumar las kcal del ejercicio y de los pasos (los que pasan de 4.000) al objetivo del día. Si lo marcas, pon la actividad en «Sedentario» para no contarlo dos veces.</label>
     <label class="full">Notas para el asistente<input name="notes" placeholder="Ej.: no como pescado, entreno a las 19:00" value="${esc(p.notes??'')}"></label>
   </form>
   <div class="card">
@@ -645,7 +648,7 @@ function dayText(date){
   const d=day(date),t=totals(date);
   const f=d.foods.map(x=>`- [${x.id}] ${mealName(x.meal)}: ${x.name}${x.qty?' ('+x.qty+')':''} ${r0(x.kcal)} kcal, P${r0(x.p)} C${r0(x.c)} G${r0(x.f)}`).join('\n')||'- sin comidas';
   const w=d.workouts.map(x=>`- [${x.id}] ${x.type}: ${x.name}, ${r0(x.min)} min, ${r0(x.kcal)} kcal${x.detail?', '+x.detail:''}`).join('\n')||'- sin entrenos';
-  return `Fecha ${date}. Total comido ${r0(t.kcal)} kcal (P ${r0(t.p)} g, C ${r0(t.c)} g, G ${r0(t.f)} g). Ejercicio ${r0(t.burn)} kcal. Agua ${d.water||0} ml. Sueño ${d.sleep??'—'} h. Pasos ${d.steps??'—'}. Peso ${d.weight??'—'} kg. Cintura ${d.waist??'—'} cm.\nComidas:\n${f}\nEntrenos:\n${w}`;
+  return `Fecha ${date}. Total comido ${r0(t.kcal)} kcal (P ${r0(t.p)} g, C ${r0(t.c)} g, G ${r0(t.f)} g). Ejercicio ${r0(t.burn)} kcal (pasos ${r0(t.stepsK)}). Agua ${d.water||0} ml. Sueño ${d.sleep??'—'} h. Pasos ${d.steps??'—'}. Peso ${d.weight??'—'} kg. Cintura ${d.waist??'—'} cm.\nComidas:\n${f}\nEntrenos:\n${w}`;
 }
 function rules(){
   const p=S.profile||{},T=targets(),n=new Date();
