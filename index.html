@@ -471,16 +471,19 @@ async function makeRecipe(f){
   RC.busy=true;RC.err='';rerenderRecipe();
   const p=S.profile||{};
   const want=[`${tg.kcal} kcal (margen ±5 %)`,tg.p&&`proteína ${tg.p} g`,tg.c&&`carbohidratos ${tg.c} g`,tg.f&&`grasa ${tg.f} g`].filter(Boolean).join(', ');
-  const prompt=`Crea 3 recetas DISTINTAS de ${mealName(RC.meal).toLowerCase()} para 1 persona en España (por ejemplo: una de carne o ave, una de pescado o huevo, una vegetal o de legumbre, si encaja con sus gustos).
-Cada receta debe sumar: ${want}. Los macros indicados con margen de ±10 %; los no indicados, libres pero razonables.
+  const kinds=['de carne o ave','de pescado, marisco o huevo','vegetariana o de legumbre'];
+  const mk=kind=>`Crea 1 receta de ${mealName(RC.meal).toLowerCase()} ${kind} para 1 persona en España (si no encaja con sus gustos, elige otra cosa distinta).
+La receta debe sumar: ${want}. Los macros indicados con margen de ±10 %; los no indicados, libres pero razonables.
 ${RC.have?'Usa sobre todo estos ingredientes que tiene en casa: '+RC.have+'. Puedes añadir básicos de despensa (aceite, especias, sal).':'Ingredientes fáciles de encontrar en un supermercado español.'}
 Objetivo físico: ${p.goal||'mantener'}. Notas: ${p.notes||'—'}. Gustos: ${(S.mem.notes||[]).map(n=>n.text).join('; ')||'—'}.
 ${RC.prev.length?'No repitas: '+RC.prev.join(', ')+'.':''}
-Cantidades en gramos (en crudo o en seco cuando aplique). Valores nutricionales de referencia BEDCA/USDA coherentes con los gramos. Comprueba que la suma de los ingredientes cumple el objetivo. Máximo 6 pasos cortos por receta.
+Cantidades en gramos (en crudo o en seco cuando aplique). Valores nutricionales de referencia BEDCA/USDA coherentes con los gramos. Comprueba que la suma de los ingredientes cumple el objetivo. Máximo 6 pasos cortos.
 Responde SOLO con JSON: {"recetas":[{"nombre":"","descripcion":"una frase","minutos":0,"ingredientes":[{"nombre":"","gramos":0,"kcal":0,"proteina":0,"carbohidratos":0,"grasa":0}],"pasos":[""]}]}`;
   try{
-    const o=await sample.json(prompt,{cache:false});
-    const arr=o&&Array.isArray(o.recetas)?o.recetas:(Array.isArray(o)?o:[]);
+    const res=await Promise.allSettled(kinds.map(k=>sample.json(mk(k),{cache:false})));
+    const arr=[];let firstErr=null;
+    for(const r of res){if(r.status==='rejected'){firstErr=firstErr||r.reason;continue}const o=r.value;const a=o&&Array.isArray(o.recetas)?o.recetas:(Array.isArray(o)?o:(o&&o.ingredientes?[o]:[]));if(a[0])arr.push(a[0])}
+    if(!arr.length&&firstErr)throw firstErr;
     const list=arr.slice(0,3).map(x=>{
       let ing=(Array.isArray(x.ingredientes)?x.ingredientes:[]).slice(0,15).map(a=>({name:String(a.nombre||'').slice(0,80),g:Number(a.gramos)||0,kcal:Number(a.kcal)||0,p:Number(a.proteina)||0,c:Number(a.carbohidratos)||0,f:Number(a.grasa)||0})).filter(a=>a.name);
       ing=fitMacros(ing,tg);
