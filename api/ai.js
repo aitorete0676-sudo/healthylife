@@ -1,7 +1,6 @@
 // Función de Vercel: puente entre la app y Gemini (plan gratuito de Google AI Studio).
 // La clave GEMINI_API_KEY vive solo en Vercel; el navegador nunca la ve.
 // Prueba varios modelos: si uno está saturado o no existe, pasa al siguiente.
-export const config = { maxDuration: 60 };
 
 const MODELS = (process.env.GEMINI_MODEL ? [process.env.GEMINI_MODEL] : []).concat([
   "gemini-flash-lite-latest",

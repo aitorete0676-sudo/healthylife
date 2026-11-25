@@ -488,7 +488,7 @@ Responde SOLO con JSON: {"recetas":[{"nombre":"","descripcion":"una frase","minu
       return{nombre:String(x.nombre||'Receta').slice(0,80),descripcion:String(x.descripcion||'').slice(0,200),min:r0(x.minutos),pasos:(Array.isArray(x.pasos)?x.pasos:[]).slice(0,8).map(y=>String(y).slice(0,300)),ing,kcal:sum('kcal'),p:sum('p'),c:sum('c'),f:sum('f'),meal:RC.meal}}).filter(r=>r.ing.length);
     if(!list.length)throw{code:'empty'};
     RC.list=list;RC.tgt=tg;RC.prev=[...RC.prev,...list.map(r=>r.nombre)].slice(-9);
-  }catch(e){RC.err=e&&e.code==='empty'?'No he recibido recetas válidas. Prueba otra vez.':(ERR[e&&e.code]||'No he podido crear las recetas ('+(e&&e.code||'error')+').')}
+  }catch(e){RC.err=e&&(e.code==='empty'||e.code==='bad_json')?'La IA no ha devuelto recetas válidas. Prueba otra vez.':(ERR[e&&e.code]||'No he podido crear las recetas ('+(e&&e.code||'error')+').')}
   RC.busy=false;rerenderRecipe();
 }
 function rerenderRecipe(){document.querySelectorAll('#recipe').forEach(el=>{const w=document.createElement('div');w.innerHTML=recipeCard();el.replaceWith(w.firstElementChild)})}
@@ -782,8 +782,9 @@ function geminiSample(){
     }
     throw{code:'api_error'};
   }
-  const f=(i,o)=>run(i,o,false);
-  f.json=async(i,o)=>{const{text}=await run(i,o,true);const m=text.match(/\{[\s\S]*\}/);return JSON.parse(m?m[0]:text)};
+  const retry=async(fn,n)=>{for(let k=0;;k++){try{return await fn()}catch(e){const c=e&&e.code;if(k>=n||c==='cancelled'||c==='no_key'||c==='bad_password'||c==='rate_limited')throw e;await new Promise(r=>setTimeout(r,800*(k+1)))}}};
+  const f=(i,o)=>retry(()=>run(i,o,false),1);
+  f.json=(i,o)=>retry(async()=>{const{text}=await run(i,o,true);const t=text.replace(/```(?:json)?/g,'');const m=t.match(/\{[\s\S]*\}/);try{return JSON.parse(m?m[0]:t)}catch(e){throw{code:'bad_json'}}},2);
   return f;
 }
 /* ---------- render & events ---------- */
