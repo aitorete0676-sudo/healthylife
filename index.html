@@ -199,7 +199,14 @@ svg text{font:13px Archivo,system-ui,sans-serif;fill:var(--mute)}
 .rcols h4{margin:0 0 4px;font-size:15px}
 .rcols ul,.rcols ol{margin:0;padding-left:20px;font-size:15px;display:grid;gap:4px}
 .rcols small{color:var(--mute);white-space:nowrap}
-@media(min-width:700px){.rcols{grid-template-columns:minmax(0,1fr) minmax(0,1.3fr)}.rform{grid-template-columns:1.2fr .8fr .8fr 2fr auto}.rform .have{grid-column:auto}.rform .btn{grid-column:auto}}
+.rform{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(min-width:700px){.rcols{grid-template-columns:minmax(0,1fr) minmax(0,1.3fr)}.rform{grid-template-columns:repeat(5,minmax(0,1fr))}}
+.rform label:first-child{grid-column:1/-1}
+@media(min-width:700px){.rform label:first-child{grid-column:auto}}
+.rlist{display:grid;gap:10px;margin-top:4px}
+.recipe details summary{cursor:pointer;font-weight:600;font-size:15px;padding:4px 0}
+.recipe details .rcols{margin-top:8px}
+.link{border:0;background:none;color:var(--hot);font-weight:700;padding:0;font-size:inherit}
 @media(max-width:420px){.fit{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .sug-h{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between}
 .sug h2{font-size:22px;font-weight:800}
@@ -416,58 +423,64 @@ function renderHoy(){
 }
 const MET={Fuerza:5,Cardio:8,Deporte:7,Movilidad:2.5,Otro:4};
 
-const RC={busy:false,err:'',r:null,meal:null,tk:null,tp:null,have:'',prev:[]};
+const RC={busy:false,err:'',list:[],meal:null,t:{kcal:'',p:'',c:'',f:''},have:'',prev:[],tgt:null};
 function remaining(){const t=totals(today()),T=targets(),p=S.profile||{};return{kcal:Math.max(0,r0(T.kcal+(p.addExercise?t.burn:0)-t.kcal)),p:Math.max(0,r0(T.p-t.p)),c:Math.max(0,r0(T.c-t.c)),f:Math.max(0,r0(T.f-t.f))}}
 function recipeCard(){
-  const L=remaining(),r=RC.r,meal=RC.meal||mealNow();
+  const L=remaining(),meal=RC.meal||mealNow(),tg=RC.tgt;
+  const fields=[['kcal','kcal'],['p','Proteína (g)'],['c','Carbos (g)'],['f','Grasa (g)']];
   return `<div class="card sug" id="recipe">
-    <h2>Receta para tus macros</h2>
-    <p class="rem">Hoy te quedan <b>${fmt(L.kcal)} kcal</b> · proteína <b>${L.p} g</b> · carbos <b>${L.c} g</b> · grasa <b>${L.f} g</b></p>
+    <h2>Recetas para tus macros</h2>
+    <p class="rem">Hoy te quedan ${fmt(L.kcal)} kcal · P ${L.p} g · C ${L.c} g · G ${L.f} g. <button type="button" class="link" data-fillrem="1">Usar estos valores</button></p>
     <form class="rform" id="f-rec">
       <label>Para<select name="meal">${MEALS.map(([k,n])=>`<option value="${k}" ${k===meal?'selected':''}>${n}</option>`).join('')}</select></label>
-      <label>kcal<input name="tk" type="number" inputmode="numeric" min="100" value="${RC.tk??L.kcal}"></label>
-      <label>Proteína (g)<input name="tp" type="number" inputmode="numeric" min="0" value="${RC.tp??L.p}"></label>
+      ${fields.map(([k,n])=>`<label>${n}<input name="${k}" type="number" inputmode="numeric" min="0" placeholder="0" value="${esc(RC.t[k])}"></label>`).join('')}
       <label class="have">¿Qué tienes en casa? (opcional)<input name="have" placeholder="pollo, arroz, pimiento…" value="${esc(RC.have)}"></label>
-      <button class="btn hot" ${RC.busy?'disabled':''}>${RC.busy?'Creando receta…':r?'Otra receta':'Hazme una receta'}</button>
+      <button class="btn hot" ${RC.busy?'disabled':''}>${RC.busy?'Creando recetas…':RC.list.length?'Otras 3 recetas':'Dame 3 recetas'}</button>
     </form>
+    <p class="rd" style="margin:8px 0 0">Rellena los valores que quieras. Los vacíos no cuentan.</p>
     ${RC.err?`<p class="empty">${esc(RC.err)}</p>`:''}
-    ${r?`<div class="recipe">
+    ${RC.list.length?`<div class="rlist">${RC.list.map((r,i)=>`<div class="recipe">
       <h3>${esc(r.nombre)}</h3><p class="rd">${esc(r.descripcion)}${r.min?` · ${r.min} min`:''}</p>
-      <div class="fit">${[['kcal',r.kcal,r.tk,''],['Proteína',r.p,r.tp,' g'],['Carbos',r.c,null,' g'],['Grasa',r.f,null,' g']].map(([n,v,g,u])=>`<div><b>${fmt(v)}${u}</b><span>${n}${g?` · objetivo ${fmt(g)}${u}`:''}</span></div>`).join('')}</div>
-      ${r.scaled?'<p class="rd">Cantidades ajustadas para clavar tus kcal.</p>':''}
-      <div class="rcols"><div><h4>Ingredientes</h4><ul>${r.ing.map(x=>`<li><b>${fmt(x.g)} g</b> ${esc(x.name)} <small>${fmt(x.kcal)} kcal · P ${r0(x.p)}</small></li>`).join('')}</ul></div>
-      <div><h4>Preparación</h4><ol>${r.pasos.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></div></div>
-      <button class="btn" data-recadd="1">Apuntar en ${mealName(r.meal)}</button>
-    </div>`:''}
+      <div class="fit">${[['kcal','kcal',''],['p','Proteína',' g'],['c','Carbos',' g'],['f','Grasa',' g']].map(([k,n,u])=>`<div><b>${fmt(r[k])}${u}</b><span>${n}${tg&&tg[k]?` · obj. ${fmt(tg[k])}${u}`:''}</span></div>`).join('')}</div>
+      <details><summary>Ingredientes y preparación</summary><div class="rcols"><div><h4>Ingredientes</h4><ul>${r.ing.map(x=>`<li><b>${fmt(x.g)} g</b> ${esc(x.name)} <small>${fmt(x.kcal)} kcal · P ${r0(x.p)}</small></li>`).join('')}</ul></div>
+      <div><h4>Preparación</h4><ol>${r.pasos.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></div></div></details>
+      <button class="btn" data-recadd="${i}">Apuntar en ${mealName(r.meal)}</button>
+    </div>`).join('')}</div>`:''}
   </div>`;
 }
 async function makeRecipe(f){
   if(RC.busy)return;
-  const fd=new FormData(f);RC.meal=String(fd.get('meal')||mealNow());RC.tk=r0(fd.get('tk'))||null;RC.tp=r0(fd.get('tp'));RC.have=String(fd.get('have')||'').slice(0,200);
+  const fd=new FormData(f);RC.meal=String(fd.get('meal')||mealNow());RC.have=String(fd.get('have')||'').slice(0,200);
+  for(const k of['kcal','p','c','f'])RC.t[k]=String(fd.get(k)||'').trim();
+  const v=k=>{const n=num(RC.t[k]);return n&&n>0?r0(n):null};
+  const tg={kcal:v('kcal'),p:v('p'),c:v('c'),f:v('f')};
+  if(!tg.kcal&&(tg.p||tg.c||tg.f))tg.kcal=r0((tg.p||0)*4+(tg.c||0)*4+(tg.f||0)*9);
+  if(!tg.kcal){RC.err='Pon al menos las kcal o algún macro.';rerenderRecipe();return}
+  if(tg.kcal<100){RC.err='Pon al menos 100 kcal.';rerenderRecipe();return}
   if(!sample){RC.err='El asistente no está disponible aquí.';rerenderRecipe();return}
-  const L=remaining(),tk=RC.tk||L.kcal,tp=RC.tp??L.p,p=S.profile||{};
-  if(tk<100){RC.err='Pon al menos 100 kcal para la receta.';rerenderRecipe();return}
   RC.busy=true;RC.err='';rerenderRecipe();
-  const prompt=`Crea UNA receta de ${mealName(RC.meal).toLowerCase()} para 1 persona en España.
-Objetivo de la receta: ${tk} kcal (margen ±5 %) y al menos ${tp} g de proteína.
-Orientativo (lo que le queda hoy): carbohidratos ${L.c} g, grasa ${L.f} g. Si la proteína pedida es alta para esas kcal, usa fuentes magras (pollo, pavo, claras, atún, queso batido, skyr, legumbres).
+  const p=S.profile||{};
+  const want=[`${tg.kcal} kcal (margen ±5 %)`,tg.p&&`proteína ${tg.p} g`,tg.c&&`carbohidratos ${tg.c} g`,tg.f&&`grasa ${tg.f} g`].filter(Boolean).join(', ');
+  const prompt=`Crea 3 recetas DISTINTAS de ${mealName(RC.meal).toLowerCase()} para 1 persona en España (por ejemplo: una de carne o ave, una de pescado o huevo, una vegetal o de legumbre, si encaja con sus gustos).
+Cada receta debe sumar: ${want}. Los macros indicados con margen de ±10 %; los no indicados, libres pero razonables.
 ${RC.have?'Usa sobre todo estos ingredientes que tiene en casa: '+RC.have+'. Puedes añadir básicos de despensa (aceite, especias, sal).':'Ingredientes fáciles de encontrar en un supermercado español.'}
-Objetivo físico: ${p.goal||'mantener'}. Notas: ${p.notes||'—'}. Le gusta / no le gusta: ${(S.mem.notes||[]).map(n=>n.text).join('; ')||'—'}.
-Ya ha comido hoy: ${day(today()).foods.map(x=>x.name).join(', ')||'nada'}.
-${RC.prev.length?'Que sea distinta de: '+RC.prev.join(', ')+'.':''}
-Cantidades en gramos (en crudo o en seco cuando aplique). Valores nutricionales de referencia BEDCA/USDA, coherentes con los gramos. Comprueba que la suma de kcal y proteína de los ingredientes cumple el objetivo. Máximo 6 pasos cortos.
-Responde SOLO con JSON: {"nombre":"","descripcion":"una frase","minutos":0,"ingredientes":[{"nombre":"","gramos":0,"kcal":0,"proteina":0,"carbohidratos":0,"grasa":0}],"pasos":[""]}`;
+Objetivo físico: ${p.goal||'mantener'}. Notas: ${p.notes||'—'}. Gustos: ${(S.mem.notes||[]).map(n=>n.text).join('; ')||'—'}.
+${RC.prev.length?'No repitas: '+RC.prev.join(', ')+'.':''}
+Cantidades en gramos (en crudo o en seco cuando aplique). Valores nutricionales de referencia BEDCA/USDA coherentes con los gramos. Comprueba que la suma de los ingredientes cumple el objetivo. Máximo 6 pasos cortos por receta.
+Responde SOLO con JSON: {"recetas":[{"nombre":"","descripcion":"una frase","minutos":0,"ingredientes":[{"nombre":"","gramos":0,"kcal":0,"proteina":0,"carbohidratos":0,"grasa":0}],"pasos":[""]}]}`;
   try{
     const o=await sample.json(prompt,{cache:false});
-    let ing=(o&&Array.isArray(o.ingredientes)?o.ingredientes:[]).slice(0,15).map(a=>({name:String(a.nombre||'').slice(0,80),g:Number(a.gramos)||0,kcal:Number(a.kcal)||0,p:Number(a.proteina)||0,c:Number(a.carbohidratos)||0,f:Number(a.grasa)||0})).filter(a=>a.name);
-    if(!ing.length)throw{code:'empty'};
-    const tot=ing.reduce((s,a)=>s+a.kcal,0);let scaled=false;
-    if(tot>0){const k=tk/tot;if(k>=0.7&&k<=1.4&&Math.abs(k-1)>0.03){scaled=true;ing=ing.map(a=>({...a,g:Math.max(1,Math.round(a.g*k/5)*5||Math.round(a.g*k)),kcal:a.kcal*k,p:a.p*k,c:a.c*k,f:a.f*k}))}}
-    ing=ing.map(a=>({...a,kcal:r0(a.kcal),p:r1(a.p),c:r1(a.c),f:r1(a.f)}));
-    const sum=k=>ing.reduce((s,a)=>s+a[k],0);
-    RC.r={nombre:String(o.nombre||'Receta').slice(0,80),descripcion:String(o.descripcion||'').slice(0,200),min:r0(o.minutos),pasos:(Array.isArray(o.pasos)?o.pasos:[]).slice(0,8).map(x=>String(x).slice(0,300)),ing,kcal:sum('kcal'),p:sum('p'),c:sum('c'),f:sum('f'),tk,tp,scaled,meal:RC.meal};
-    RC.prev=[...RC.prev,RC.r.nombre].slice(-5);
-  }catch(e){RC.err=e&&e.code==='empty'?'No he recibido una receta válida. Prueba otra vez.':(ERR[e&&e.code]||'No he podido crear la receta ('+(e&&e.code||'error')+').')}
+    const arr=o&&Array.isArray(o.recetas)?o.recetas:(Array.isArray(o)?o:[]);
+    const list=arr.slice(0,3).map(x=>{
+      let ing=(Array.isArray(x.ingredientes)?x.ingredientes:[]).slice(0,15).map(a=>({name:String(a.nombre||'').slice(0,80),g:Number(a.gramos)||0,kcal:Number(a.kcal)||0,p:Number(a.proteina)||0,c:Number(a.carbohidratos)||0,f:Number(a.grasa)||0})).filter(a=>a.name);
+      const tot=ing.reduce((s,a)=>s+a.kcal,0);
+      if(tot>0){const k=tg.kcal/tot;if(k>=0.7&&k<=1.4&&Math.abs(k-1)>0.03)ing=ing.map(a=>({...a,g:Math.max(1,Math.round(a.g*k/5)*5||Math.round(a.g*k)),kcal:a.kcal*k,p:a.p*k,c:a.c*k,f:a.f*k}))}
+      ing=ing.map(a=>({...a,kcal:r0(a.kcal),p:r1(a.p),c:r1(a.c),f:r1(a.f)}));
+      const sum=k=>ing.reduce((s,a)=>s+a[k],0);
+      return{nombre:String(x.nombre||'Receta').slice(0,80),descripcion:String(x.descripcion||'').slice(0,200),min:r0(x.minutos),pasos:(Array.isArray(x.pasos)?x.pasos:[]).slice(0,8).map(y=>String(y).slice(0,300)),ing,kcal:sum('kcal'),p:sum('p'),c:sum('c'),f:sum('f'),meal:RC.meal}}).filter(r=>r.ing.length);
+    if(!list.length)throw{code:'empty'};
+    RC.list=list;RC.tgt=tg;RC.prev=[...RC.prev,...list.map(r=>r.nombre)].slice(-9);
+  }catch(e){RC.err=e&&e.code==='empty'?'No he recibido recetas válidas. Prueba otra vez.':(ERR[e&&e.code]||'No he podido crear las recetas ('+(e&&e.code||'error')+').')}
   RC.busy=false;rerenderRecipe();
 }
 function rerenderRecipe(){document.querySelectorAll('#recipe').forEach(el=>{const w=document.createElement('div');w.innerHTML=recipeCard();el.replaceWith(w.firstElementChild)})}
@@ -787,8 +800,9 @@ document.addEventListener('click',e=>{
   if(b.dataset.delFood){const d=editDay(S.date);d.foods=d.foods.filter(x=>x.id!==b.dataset.delFood);saveDay(S.date);renderHoy();renderProg()}
   if(b.dataset.delWo){const d=editDay(S.date);d.workouts=d.workouts.filter(x=>x.id!==b.dataset.delWo);saveDay(S.date);renderHoy();renderProg()}
   if(b.closest('#chips')){send(b.textContent)}
-  if(b.dataset.recadd&&RC.r){const r=RC.r;const it={id:uid(),meal:r.meal,name:r.nombre,qty:'1 ración (receta)',kcal:r0(r.kcal),p:r1(r.p),c:r1(r.c),f:r1(r.f)};const d=editDay(today());d.foods.push(it);saveDay(today());
-    upsertLib([{name:r.nombre,unit:'ud',base:1,def:1,label:'1 ración (receta)',kcal:it.kcal,p:it.p,c:it.c,f:it.f}]);toast(`Apuntado: ${r.nombre}, ${fmt(r.kcal)} kcal`);RC.r=null;RC.tk=null;RC.tp=null;if(S.date!==today())S.date=today();render()}
+  if(b.dataset.fillrem){const L=remaining();RC.t={kcal:String(L.kcal),p:String(L.p),c:String(L.c),f:String(L.f)};rerenderRecipe()}
+  if(b.dataset.recadd&&RC.list[+b.dataset.recadd]){const r=RC.list[+b.dataset.recadd];const it={id:uid(),meal:r.meal,name:r.nombre,qty:'1 ración (receta)',kcal:r0(r.kcal),p:r1(r.p),c:r1(r.c),f:r1(r.f)};const d=editDay(today());d.foods.push(it);saveDay(today());
+    upsertLib([{name:r.nombre,unit:'ud',base:1,def:1,label:'1 ración (receta)',kcal:it.kcal,p:it.p,c:it.c,f:it.f}]);toast(`Apuntado: ${r.nombre}, ${fmt(r.kcal)} kcal`);RC.list=[];RC.t={kcal:'',p:'',c:'',f:''};if(S.date!==today())S.date=today();render()}
   if(b.dataset.sheet)openSheet(b.dataset.sheet);
   if(b.dataset.sheetPick)openSheet(mealNow(),b.dataset.sheetPick);
   if(b.dataset.shmeal){shMeal=b.dataset.shmeal;document.querySelectorAll('#shmeal button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)))}
