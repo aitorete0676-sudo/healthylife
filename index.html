@@ -528,6 +528,7 @@ function renderPerfil(){
     </div>
     <p class="hint">Se recalcula con tu último peso apuntado. Mínimo de seguridad: ${fmt(T.floor)} kcal. Revisa cada 2–3 semanas: si el peso no se mueve como esperas, ajusta ±150 kcal.</p>
     <p class="hint">Datos: ${S.mode==='nube'?'guardados en tu cuenta de Claude, privados (solo tú los ves).':'solo en este navegador.'}</p>
+    ${WEB?`<label class="hint" style="display:grid;gap:4px">Contraseña del asistente (solo si pusiste APP_PASSWORD en Vercel)<input id="apppass" type="password" autocomplete="current-password" value="${esc(getPass())}" style="border:1px solid var(--line);border-radius:10px;padding:9px 10px;font-size:16px;background:var(--bg);color:var(--ink)"></label>`:''}
     <p class="hint"><b>Como app en el móvil:</b> ábrela en la app de Claude, o en Safari o Chrome con tu cuenta de Claude y pulsa Compartir → «Añadir a pantalla de inicio».</p>
     <button class="btn ghost" type="button" id="clearchat">Borrar conversación del asistente</button>
   </div></div>`;
@@ -664,7 +665,7 @@ function renderLib(){
   ${notes.map(n=>`<div class="row" style="border-top:1px solid var(--line)"><div class="n">${esc(n.text)}</div><span></span><button class="x" data-del-mem="${esc(n.id)}" aria-label="Olvidar">×</button></div>`).join('')}
   <form class="composer" id="f-mem" style="margin-top:10px"><input name="t" required maxlength="300" placeholder="Ej.: no me gusta el pescado"><button class="btn">Guardar</button></form>`;
 }
-const ERR={not_granted:'Necesito permiso para usar Claude. Ábrelo desde Claude y acepta el aviso.',rate_limited:'Demasiadas preguntas seguidas. Espera un minuto.',session_expired:'Tu sesión ha caducado. Recarga la página.',sampling_disabled:'El asistente no está disponible en esta cuenta.',refused:'No puedo responder a eso.',prompt_too_large:'La conversación es muy larga. Borra el chat en Perfil.'};
+const ERR={no_key:'Falta la clave gratuita de Gemini en Vercel (GEMINI_API_KEY). Mira el README.',bad_password:'Contraseña incorrecta. Escríbela en Perfil.',api_error:'Error del servidor de IA. Prueba en un momento.',not_granted:'Necesito permiso para usar Claude. Ábrelo desde Claude y acepta el aviso.',rate_limited:'Has llegado al límite gratuito por ahora. Espera un rato y vuelve a probar.',session_expired:'Tu sesión ha caducado. Recarga la página.',sampling_disabled:'El asistente no está disponible en esta cuenta.',refused:'No puedo responder a eso.',prompt_too_large:'La conversación es muy larga. Borra el chat en Perfil.'};
 async function send(text){
   text=text.trim();if(!text||busy)return;
   if(!sample){toast('El asistente solo está en la versión de Claude.');return}
@@ -687,6 +688,40 @@ async function send(text){
 /* ---------- versión web (Vercel): sin IA de pago; el asistente vive en la versión de Claude ---------- */
 let WEB=false;
 const CLAUDE_URL='https://claude.ai/artifact/VdDxb12ocRBh8y4k4aLBos';
+const PASSKEY='healthy-life-pass';
+const getPass=()=>{try{return localStorage.getItem(PASSKEY)||''}catch(e){return ''}};
+const upType=v=>Array.isArray(v)?v.map(upType):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).map(([k,x])=>[k,k==='type'&&typeof x==='string'?x.toUpperCase():upType(x)])):v;
+/* asistente gratis en la web: Gemini (plan gratuito) a través de /api/ai */
+function geminiSample(){
+  const call=async(body,signal)=>{
+    let r;try{r=await fetch('/api/ai',{method:'POST',headers:{'content-type':'application/json','x-app-password':getPass()},body:JSON.stringify(body),signal})}
+    catch(e){throw{code:e&&e.name==='AbortError'?'cancelled':'api_error'}}
+    const j=await r.json().catch(()=>({}));if(!r.ok)throw{code:j.code||'api_error',message:j.error||''};return j};
+  async function run(input,opts,json){
+    opts=opts||{};
+    const contents=(typeof input==='string'?[{role:'user',content:input}]:input).map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:String(m.content)}]}));
+    const tl=opts.tools||[];
+    const tools=tl.map(t=>({name:t.name,description:t.description,...(t.inputSchema?{parameters:upType(t.inputSchema)}:{})}));
+    for(let round=0;round<8;round++){
+      if(opts.signal&&opts.signal.aborted)throw{code:'cancelled'};
+      const j=await call({contents,tools,json},opts.signal);
+      const parts=(j.content&&Array.isArray(j.content.parts))?j.content.parts:[];
+      const calls=parts.filter(x=>x.functionCall);
+      const text=parts.filter(x=>x.text&&!x.thought).map(x=>x.text).join('');
+      if(!calls.length){if(j.finishReason==='SAFETY'&&!text)throw{code:'refused'};opts.onText&&opts.onText({text,delta:text});return{text,truncated:j.finishReason==='MAX_TOKENS'}}
+      contents.push({role:'model',parts});
+      const resp=[];
+      for(const x of calls){const name=x.functionCall.name,t=tl.find(y=>y.name===name);let out;
+        try{if(!t)throw new Error('Herramienta desconocida');out=await t.execute(x.functionCall.args||{},{signal:opts.signal})}catch(e){out='Error: '+(e&&e.message||e)}
+        resp.push({functionResponse:{name,response:{result:out}}})}
+      contents.push({role:'user',parts:resp});
+    }
+    throw{code:'api_error'};
+  }
+  const f=(i,o)=>run(i,o,false);
+  f.json=async(i,o)=>{const{text}=await run(i,o,true);const m=text.match(/\{[\s\S]*\}/);return JSON.parse(m?m[0]:text)};
+  return f;
+}
 /* ---------- render & events ---------- */
 function render(){
   $('#dlabel').textContent=dayLabel(S.date);$('#next').disabled=S.date>=today();
@@ -729,6 +764,7 @@ $('#prev').onclick=()=>{S.date=addDays(S.date,-1);render()};
 $('#next').onclick=()=>{if(S.date<today()){S.date=addDays(S.date,1);render()}};
 document.addEventListener('change',e=>{
   const el=e.target;
+  if(el.id==='apppass'){try{localStorage.setItem(PASSKEY,el.value.trim())}catch(e){}toast('Contraseña guardada');return}
   if(el.dataset.body){const d=editDay(S.date);const n=num(el.value);d[el.dataset.body]=n==null?null:(el.dataset.body==='steps'?r0(n):r1(n));saveDay(S.date);renderProg();if(el.dataset.body==='weight')renderPerfil()}
   if(el.closest('#f-prof')){const fd=new FormData($('#f-prof'));const p={...(S.profile||{})};
     for(const k of['sex','activity','goal','notes'])p[k]=String(fd.get(k)||'').slice(0,300);
@@ -756,7 +792,7 @@ addEventListener('resize',()=>{if(innerWidth>=1000&&document.body.dataset.view==
 
 async function boot(){
   go('hoy');render();
-  if(!window.claude){WEB=true;S.mode='local';loadLocal();render();return}
+  if(!window.claude){WEB=true;S.mode='local';loadLocal();sample=geminiSample();render();return}
   let db=null,user=null;
   try{[db,user,sample]=await Promise.all([claude.use('db'),claude.use('user'),claude.use('sample')])}catch(e){}
   const id=user?await user.id():null;
