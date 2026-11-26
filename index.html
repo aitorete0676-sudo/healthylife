@@ -130,6 +130,11 @@ details.add summary{cursor:pointer;font-weight:600;padding:10px 0}
 .chips button{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:7px 12px;font-size:14px;text-align:left}
 .chips button:hover{border-color:var(--hot)}
 .composer{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end}
+.composer#composer{grid-template-columns:auto minmax(0,1fr) auto}
+.camb{display:grid;place-items:center;width:48px;height:48px;border:1px solid var(--line);border-radius:14px;cursor:pointer;color:var(--ink);background:var(--bg)}
+.photo{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:14px;color:var(--mute)}.photo img{width:64px;height:64px;object-fit:cover;border-radius:10px}
+.photo button{border:0;background:none;color:var(--mute);font-size:22px;cursor:pointer}
+.m.u img{display:block;width:140px;max-width:100%;border-radius:10px;margin-bottom:6px}
 .composer textarea{border:1px solid var(--line);border-radius:14px;padding:11px 12px;font-size:16px;resize:none;min-height:48px;max-height:140px;background:var(--bg)}
 .welcome{color:var(--mute);font-size:15px}
 .welcome b{color:var(--ink)}
@@ -266,7 +271,9 @@ svg text{font:13px Archivo,system-ui,sans-serif;fill:var(--mute)}
     <div class="chathead"><h2>Asistente</h2><p>Dile lo que comes o entrenas y lo apunta. Pregúntale lo que quieras.</p></div>
     <div class="msgs" id="msgs"></div>
     <div class="chips" id="chips"></div>
+    <div class="photo" id="photo" hidden></div>
     <form class="composer" id="composer">
+      <label class="camb" title="Foto de un plato" aria-label="Foto de un plato"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><input type="file" id="camin" accept="image/*" hidden></label>
       <textarea id="q" rows="1" placeholder="Escribe qué has comido…"></textarea>
       <button class="btn hot" id="sendbtn" type="submit">Enviar</button>
     </form>
@@ -667,7 +674,7 @@ function renderChat(streamText){
   const box=$('#msgs');const turns=S.chat.turns||[];
   let h='';
   if(!turns.length)h=`<div class="welcome"><p><b>Tu asistente de nutrición y entreno.</b></p><p>Dile lo que comes con tus palabras y lo apunta con kcal y macros. También apunta entrenos, peso, agua y sueño, corrige errores y te propone comidas que encajan con lo que te queda.</p>${!sample&&S.mode!=='cargando'?`<p><b>Aquí el asistente no está disponible.</b> Úsalo gratis con tu cuenta en la <a href="${CLAUDE_URL}">versión de Claude</a>. Aquí puedes apuntar todo a mano con «+ Añadir alimento».</p>`:''}</div>`;
-  h+=turns.map(t=>t.role==='user'?`<div class="m u">${esc(t.content)}</div>`:`<div class="m a ${t.err?'err':''}">${md(t.content)}${t.acts&&t.acts.length?`<div class="acts">${t.acts.map(a=>`<div>${esc(a)}</div>`).join('')}</div>`:''}</div>`).join('');
+  h+=turns.map(t=>t.role==='user'?`<div class="m u">${t.thumb&&/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(t.thumb)?`<img src="${t.thumb}" alt="Foto del plato">`:''}${esc(t.content)}</div>`:`<div class="m a ${t.err?'err':''}">${md(t.content)}${t.acts&&t.acts.length?`<div class="acts">${t.acts.map(a=>`<div>${esc(a)}</div>`).join('')}</div>`:''}</div>`).join('');
   if(busy)h+=`<div class="m a" id="live">${streamText?md(streamText):'Pensando…'}</div>`;
   box.innerHTML=h;box.scrollTop=box.scrollHeight;
   $('#chips').innerHTML=turns.length>2||busy?'':CHIPS.map(c=>`<button type="button">${esc(c)}</button>`).join('');
@@ -793,23 +800,32 @@ function renderLib(){
   <form class="composer" id="f-mem" style="margin-top:10px"><input name="t" required maxlength="300" placeholder="Ej.: no me gusta el pescado"><button class="btn">Guardar</button></form>`;
 }
 const ERR={no_key:'Falta la clave gratuita de Gemini en Vercel (GEMINI_API_KEY). Mira el README.',bad_password:'Contraseña incorrecta. Escríbela en Perfil.',api_error:'Error del servidor de IA. Prueba en un momento.',busy:'Los servidores gratuitos de Google están saturados ahora mismo. Prueba en un minuto.',not_granted:'Necesito permiso para usar Claude. Ábrelo desde Claude y acepta el aviso.',rate_limited:'Has llegado al límite gratuito por ahora. Espera un rato y vuelve a probar.',session_expired:'Tu sesión ha caducado. Recarga la página.',sampling_disabled:'El asistente no está disponible en esta cuenta.',refused:'No puedo responder a eso.',prompt_too_large:'La conversación es muy larga. Borra el chat en Perfil.'};
+let PHOTO=null;
+function shrink(file,max,q){return new Promise((ok,bad)=>{const u=URL.createObjectURL(file),im=new Image();im.onload=()=>{const k=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);c.toBlob(b=>b?ok({blob:b,url:c.toDataURL('image/jpeg',q)}):bad(),'image/jpeg',q)};im.onerror=()=>{URL.revokeObjectURL(u);bad()};im.src=u})}
+async function pickPhoto(file){if(!file)return;
+  if(!WEB&&sample&&sample.limits){try{const l=await sample.limits();if(!l||!l.images){toast('Las fotos no están disponibles aquí. Prueba en la web.');return}}catch(e){}}
+  try{const big=await shrink(file,1024,.82),sm=await shrink(file,200,.6);PHOTO={blob:big.blob,thumb:sm.url};renderPhoto();$('#q').focus()}catch(e){toast('No he podido leer la foto.')}}
+function renderPhoto(){const el=$('#photo');if(!PHOTO){el.hidden=true;el.innerHTML='';return}el.hidden=false;el.innerHTML=`<img src="${PHOTO.thumb}" alt="Foto del plato"><span>Foto lista. Añade detalles si quieres (p. ej. «con aceite»).</span><button type="button" data-unphoto="1" aria-label="Quitar foto">×</button>`}
 async function send(text){
-  text=text.trim();if(!text||busy)return;
+  text=text.trim();const ph=PHOTO;if((!text&&!ph)||busy)return;
+  if(ph&&!text)text='¿Cuántas calorías tiene este plato?';
+  PHOTO=null;renderPhoto();
   if(!sample){toast('El asistente solo está en la versión de Claude.');return}
   const hist=(S.chat.turns||[]).slice(-16);
-  S.chat={turns:[...(S.chat.turns||[]),{role:'user',content:text}]};
+  S.chat={turns:[...(S.chat.turns||[]),{role:'user',content:text,...(ph?{thumb:ph.thumb}:{})}]};
   busy=true;renderChat();
   const input=[{role:'user',content:rules()},{role:'assistant',content:'Entendido. Te ayudo y apunto lo que me digas.'}];
   for(const t of hist){const l=input[input.length-1];if(l.role===t.role)l.content+='\n'+t.content;else input.push({role:t.role,content:t.content})}
-  if(input[input.length-1].role==='user')input[input.length-1].content+='\n'+text;else input.push({role:'user',content:text});
+  const q=ph?text+'\n[FOTO ADJUNTA] Identifica cada alimento del plato, estima los gramos por el tamaño del plato y los cubiertos, y da kcal y macros de cada uno y el total, con un margen (±). Di qué has supuesto (aceite, salsas). No lo apuntes todavía salvo que te diga que ya se lo ha comido o que lo apuntes; al final pregunta si lo apunto y en qué comida.':text;
+  if(input[input.length-1].role==='user')input[input.length-1].content+='\n'+q;else input.push({role:'user',content:q});
   const acts=[];ctl=new AbortController();let out;
   try{
-    const r=await sample(input,{cache:false,signal:ctl.signal,tools:tools(acts),onText:({text})=>{const el=$('#live');if(el)el.textContent=text;$('#msgs').scrollTop=1e9}});
+    const r=await sample(input,{cache:false,signal:ctl.signal,tools:tools(acts),...(ph?{images:[ph.blob]}:{}),onText:({text})=>{const el=$('#live');if(el)el.textContent=text;$('#msgs').scrollTop=1e9}});
     out={role:'assistant',content:r.text||'Hecho.',acts};
   }catch(e){
     const c=e&&e.code;out={role:'assistant',content:(e&&e.text?e.text+'\n':'')+(c==='cancelled'?'(Parado)':ERR[c]||'No he podido responder ('+(c||'error')+').'),acts,err:c!=='cancelled'};
   }
-  busy=false;S.chat.turns.push(out);S.chat.turns=S.chat.turns.slice(-40);save('chat',S.chat);renderChat();
+  busy=false;S.chat.turns.push(out);S.chat.turns=S.chat.turns.slice(-40);{let n=0;for(let i=S.chat.turns.length-1;i>=0;i--)if(S.chat.turns[i].thumb&&++n>4)delete S.chat.turns[i].thumb}save('chat',S.chat);renderChat();
 }
 
 /* ---------- versión web (Vercel): sin IA de pago; el asistente vive en la versión de Claude ---------- */
@@ -827,6 +843,9 @@ function geminiSample(){
   async function run(input,opts,json){
     opts=opts||{};
     const contents=(typeof input==='string'?[{role:'user',content:input}]:input).map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:String(m.content)}]}));
+    if(opts.images&&opts.images.length){const last=contents[contents.length-1];
+      for(const b of opts.images){const d=await new Promise((ok,bad)=>{const r=new FileReader();r.onload=()=>ok(String(r.result));r.onerror=bad;r.readAsDataURL(b)});
+        last.parts.push({inlineData:{mimeType:b.type||'image/jpeg',data:d.slice(d.indexOf(',')+1)}})}}
     const tl=opts.tools||[];
     const tools=tl.map(t=>({name:t.name,description:t.description,...(t.inputSchema?{parameters:upType(t.inputSchema)}:{})}));
     for(let round=0;round<8;round++){
@@ -920,6 +939,8 @@ document.addEventListener('submit',e=>{
     d.workouts.push({id:uid(),type:s.type,sport:sp,name:s.label,min,kcal:num(fd.get('kcal'))>0?r0(fd.get('kcal')):woKcal(sp,lvl,min,km,rest),detail:det.slice(0,300)})}
   saveDay(S.date);document.activeElement&&document.activeElement.blur();deferHoy=false;renderHoy();renderProg();
 });
+$('#camin').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];e.target.value='';pickPhoto(f)});
+document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('[data-unphoto]')){PHOTO=null;renderPhoto()}});
 $('#q').addEventListener('input',e=>{e.target.style.height='';e.target.style.height=Math.min(140,e.target.scrollHeight)+'px'});
 $('#q').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&innerWidth>=700){e.preventDefault();$('#composer').requestSubmit()}});
 addEventListener('resize',()=>{if(innerWidth>=1000&&document.body.dataset.view==='chat')go('hoy')});
