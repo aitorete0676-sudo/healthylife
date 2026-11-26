@@ -508,7 +508,6 @@ function renderHoy(){
   </div>
   ${balanceCard(S.date)}
 
-  ${recipeCard()}
   ${diaryHtml(d,t,T,foodsBy)}
   <p class="hint">O <button data-go="chat">díselo al asistente</button>: «he comido un plato de macarrones con tomate». Lo que apuntas se guarda en Mis alimentos.</p>
 
@@ -526,7 +525,8 @@ function renderHoy(){
       <label>kcal de tu reloj<input name="kcal" type="number" inputmode="numeric" min="0" placeholder="opcional"></label>
       <p class="full woest" id="woest">${woEstText()}</p>
       <div class="full"><button class="btn">Añadir</button></div>
-    </form></details>`;
+    </form></details>
+  <div style="margin-top:28px">${recipeCard()}</div>`;
 }
 // METs (Compendium of Physical Activities). Se cuenta (MET-1) porque el reposo ya está en tu gasto base.
 const SPORTS={
