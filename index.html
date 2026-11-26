@@ -148,6 +148,11 @@ details.add summary{cursor:pointer;font-weight:600;padding:10px 0}
 .ph.empty,.ph.missing{display:grid;place-items:center;color:var(--mute);font-size:13px}.ph .x{position:absolute;right:6px;top:6px;width:auto;background:rgba(0,0,0,.55);color:#fff;border-radius:999px;min-width:30px;height:30px}.ph .x.sure{background:var(--hot);padding:0 8px}
 .phadd{aspect-ratio:3/4;border:2px dashed var(--line);border-radius:12px;display:grid;place-content:center;text-align:center;color:var(--mute);font-size:13px;cursor:pointer}.phadd span{font-size:30px;line-height:1;color:var(--ink)}
 .cmpgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.phhead{display:flex;justify-content:space-between;font-size:14px;margin-bottom:4px}.phhead span{color:var(--mute)}
+.shsearch{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+.scan{margin:10px 0;padding:10px;border:1px solid var(--line);border-radius:14px}
+.scanv{position:relative;border-radius:10px;overflow:hidden;background:#000;aspect-ratio:4/3;max-height:42svh}.scanv video{width:100%;height:100%;object-fit:cover;display:block}
+.scanv i{position:absolute;left:12%;right:12%;top:45%;height:2px;background:var(--hot);box-shadow:0 0 8px var(--hot)}
+.scanrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.scanrow input{flex:1;min-width:140px;border:1px solid var(--line);border-radius:12px;padding:10px;font-size:16px;background:var(--bg);color:var(--ink)}
 .composer textarea{border:1px solid var(--line);border-radius:14px;padding:11px 12px;font-size:16px;resize:none;min-height:48px;max-height:140px;background:var(--bg)}
 .welcome{color:var(--mute);font-size:15px}
 .welcome b{color:var(--ink)}
@@ -308,7 +313,14 @@ svg text{font:13px Archivo,system-ui,sans-serif;fill:var(--mute)}
   <div class="sheetin" role="dialog" aria-label="Añadir alimento">
     <div class="sh-head"><h2>Añadir alimento</h2><button class="x" id="shclose" type="button" aria-label="Cerrar">×</button></div>
     <div class="chips" id="shmeal"></div>
-    <input id="shq" type="search" autocomplete="off" placeholder="Busca: pollo, arroz, tu batido…">
+    <div class="shsearch"><input id="shq" type="search" autocomplete="off" placeholder="Busca: pollo, arroz, tu batido…"><button type="button" class="camb" id="scanbtn" title="Escanear código de barras" aria-label="Escanear código de barras"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7V4h3M21 7V4h-3M3 17v3h3M21 17v3h-3M7 8v8M10 8v8M13 8v8M17 8v8"/></svg></button></div>
+    <div class="scan" id="scan" hidden>
+      <div class="scanv"><video id="scanvid" playsinline muted></video><i></i></div>
+      <p class="hint" id="scanmsg" style="margin:6px 0">Apunta al código de barras.</p>
+      <div class="scanrow"><label class="btn">Foto del código<input type="file" id="scanimg" accept="image/*" capture="environment" hidden></label>
+      <form id="f-code" class="scanrow"><input name="code" inputmode="numeric" pattern="[0-9]{6,14}" placeholder="o escribe el número" required><button class="btn hot">Buscar</button></form>
+      <button type="button" class="btn" id="scanclose">Cerrar</button></div>
+    </div>
     <div class="shres" id="shres"></div>
     <details class="add" id="shnew"><summary>Crear alimento nuevo</summary>
       <form class="form" id="f-new">
@@ -818,7 +830,7 @@ function libText(){return (S.lib.items||[]).slice().sort((a,b)=>(b.uses||0)-(a.u
 function addMem(t){S.mem={notes:[...(S.mem.notes||[]),{id:uid(),text:t,date:today()}].slice(-60)};save('memory',S.mem);renderLib()}
 function upsertLib(list){
   const items=(S.lib.items||[]).map(x=>({...x}));
-  for(const it of list){const k=norm(it.name);if(!k)continue;const e=items.find(x=>norm(x.name)===k);const clean={name:it.name,unit:it.unit,base:it.base,def:it.def,label:it.label,kcal:it.kcal,p:it.p,c:it.c,f:it.f};
+  for(const it of list){const k=norm(it.name);if(!k)continue;const e=items.find(x=>norm(x.name)===k);const clean={...(it.code?{code:String(it.code)}:{}),name:it.name,unit:it.unit,base:it.base,def:it.def,label:it.label,kcal:it.kcal,p:it.p,c:it.c,f:it.f};
     if(e)Object.assign(e,clean,{uses:(e.uses||0)+1,last:today()});else items.push({...clean,id:uid(),uses:1,last:today()})}
   S.lib={items:items.slice(-300)};save('library',S.lib);renderLib();
 }
@@ -829,7 +841,41 @@ const findItem=id=>libItems().find(x=>x.id===id)||BASEI.find(x=>x.id===id);
 const calc=(it,a)=>{const k=a/(it.base||1);return{kcal:r0(it.kcal*k),p:r1(it.p*k),c:r1(it.c*k),f:r1(it.f*k)}};
 const amountLabel=(it,a)=>it.unit==='g'?`${r1(a)} g`:(a===1?it.label:`${String(r1(a)).replace('.',',')} × ${it.label}`);
 function openSheet(meal,pick){shMeal=meal||mealNow();shPick=pick||null;$('#shq').value='';$('#sheet').hidden=false;document.body.classList.add('noscroll');renderSheet();if(!pick&&innerWidth>=700)$('#shq').focus()}
-function closeSheet(){$('#sheet').hidden=true;document.body.classList.remove('noscroll')}
+function closeSheet(){stopScan();$('#sheet').hidden=true;document.body.classList.remove('noscroll')}
+/* ---------- ESCÁNER (Open Food Facts, gratis) ---------- */
+let SCAN=null;
+const scanMsg=t=>{const o=$('#scanmsg');if(o)o.textContent=t};
+function loadZX(){if(window.ZXing)return Promise.resolve(window.ZXing);return new Promise((ok,bad)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';sc.onload=()=>window.ZXing?ok(window.ZXing):bad();sc.onerror=bad;document.head.appendChild(sc)})}
+const FMT=['ean_13','ean_8','upc_a','upc_e','code_128'];
+async function startScan(){$('#scan').hidden=false;scanMsg('Abriendo la cámara…');const v=$('#scanvid');
+  try{
+    if('BarcodeDetector' in window&&(await BarcodeDetector.getSupportedFormats()).includes('ean_13')){
+      const st=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});v.srcObject=st;await v.play();
+      const det=new BarcodeDetector({formats:FMT});SCAN={stop:()=>st.getTracks().forEach(t=>t.stop())};scanMsg('Apunta al código de barras.');
+      const loop=async()=>{if(!SCAN||$('#scan').hidden)return;try{const r=await det.detect(v);if(r[0]){gotCode(r[0].rawValue);return}}catch(e){}setTimeout(loop,250)};loop();
+    }else{
+      const ZX=await loadZX();const rd=new ZX.BrowserMultiFormatReader();SCAN={stop:()=>rd.reset()};
+      await rd.decodeFromConstraints({video:{facingMode:'environment'}},v,(res)=>{if(res&&SCAN)gotCode(res.getText())});scanMsg('Apunta al código de barras.');
+    }
+  }catch(e){SCAN=null;scanMsg('No puedo abrir la cámara aquí. Haz una foto del código o escribe el número.')}}
+function stopScan(){try{SCAN&&SCAN.stop()}catch(e){}SCAN=null;const v=$('#scanvid');if(v){try{v.pause()}catch(e){}if(v.srcObject){v.srcObject.getTracks().forEach(t=>t.stop());v.srcObject=null}}$('#scan')&&($('#scan').hidden=true)}
+async function scanImage(file){if(!file)return;scanMsg('Leyendo la foto…');
+  try{if('BarcodeDetector' in window){const bm=await createImageBitmap(file);const r=await new BarcodeDetector({formats:FMT}).detect(bm);if(r[0])return gotCode(r[0].rawValue)}}catch(e){}
+  try{const ZX=await loadZX();const u=URL.createObjectURL(file);const res=await new ZX.BrowserMultiFormatReader().decodeFromImageUrl(u);URL.revokeObjectURL(u);return gotCode(res.getText())}
+  catch(e){scanMsg('No encuentro el código en la foto. Prueba más cerca y con luz, o escribe el número.')}}
+async function gotCode(code){code=String(code||'').replace(/\D/g,'');if(code.length<6)return;try{navigator.vibrate&&navigator.vibrate(60)}catch(e){}
+  try{SCAN&&SCAN.stop()}catch(e){}SCAN=null;
+  const have=(S.lib.items||[]).find(x=>x.code===code);if(have){stopScan();shPick=have.id;renderSheet();toast('Lo tenías guardado: '+have.name);return}
+  scanMsg('Buscando '+code+'…');
+  let pr=null;try{const r=await fetch('https://world.openfoodfacts.org/api/v2/product/'+code+'.json?fields=product_name,product_name_es,brands,nutriments,serving_quantity');const j=await r.json();pr=j&&j.status===1?j.product:null;if(!pr)throw{code:'nf'}}
+  catch(e){scanMsg(e&&e.code==='nf'?`No encuentro el producto ${code}. Créalo abajo en «Crear alimento nuevo» y la próxima vez lo tendrás.`:'No puedo consultar la base de datos de productos desde aquí. Prueba en la web o crea el alimento abajo.');return}
+  const n=pr.nutriments||{},g=k=>{const v=Number(n[k+'_100g']);return isFinite(v)&&v>=0?v:null};
+  let kcal=g('energy-kcal');if(kcal==null&&g('energy')!=null)kcal=g('energy')/4.184;
+  if(kcal==null){scanMsg('Lo encuentro pero no trae calorías. Créalo abajo con los datos de la etiqueta.');return}
+  const name=[String(pr.product_name_es||pr.product_name||'Producto '+code).trim(),String(pr.brands||'').split(',')[0].trim()].filter(Boolean).join(' · ').slice(0,80);
+  const sv=Number(pr.serving_quantity);const def=sv>0&&sv<2000?r0(sv):100;
+  upsertLib([{code,name,unit:'g',base:100,def,label:'escaneado · 100 g = '+r0(kcal)+' kcal',kcal:r0(kcal),p:r1(g('proteins')||0),c:r1(g('carbohydrates')||0),f:r1(g('fat')||0)}]);
+  const it=(S.lib.items||[]).find(x=>x.code===code);stopScan();shPick=it&&it.id;$('#shq').value='';renderSheet();toast('Encontrado: '+name+'. Pon los gramos y añade.');}
 function renderSheet(){
   $('#shmeal').innerHTML=MEALS.map(([k,n])=>`<button type="button" data-shmeal="${k}" aria-pressed="${k===shMeal}">${n}</button>`).join('');
   const q=norm($('#shq').value),words=q.split(/\s+/).filter(Boolean);
@@ -968,6 +1014,10 @@ document.addEventListener('click',e=>{
 });
 $('#sheet').addEventListener('click',e=>{if(e.target.id==='sheet')closeSheet()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#sheet').hidden)closeSheet()});
+$('#scanbtn').addEventListener('click',()=>{if(SCAN||!$('#scan').hidden)stopScan();else startScan()});
+$('#scanclose').addEventListener('click',stopScan);
+$('#scanimg').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];e.target.value='';try{SCAN&&SCAN.stop()}catch(x){}SCAN=null;scanImage(f)});
+$('#f-code').addEventListener('submit',e=>{e.preventDefault();e.stopPropagation();gotCode(new FormData(e.target).get('code'))});
 document.addEventListener('input',e=>{if(e.target.id==='shq'){shPick=null;renderSheet()}if(e.target.id==='shamt')updCalc();woUpd(e)});
 document.addEventListener('change',woUpd);
 function woUpd(e){const f=e.target.closest&&e.target.closest('#f-wo');if(!f)return;const km=f.querySelector('.km');if(km)km.hidden=!SPORTS[f.sport.value].km;const rs=f.querySelector('.rest');if(rs)rs.hidden=!SPORTS[f.sport.value].rest;const o=f.querySelector('#woest');if(o)o.innerHTML=woEstText()}
