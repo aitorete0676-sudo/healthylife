@@ -182,6 +182,7 @@ details.add summary{cursor:pointer;font-weight:600;padding:10px 0}
 .pinfo b{display:block;font-size:17px}.pinfo small{color:var(--mute);font-size:13px}
 .padd{padding:10px 14px}.pmore{grid-column:1/-1;display:flex;gap:12px;align-items:center;justify-content:flex-end;margin-bottom:-6px}
 .pb{margin-top:12px}.pbres{display:grid;gap:4px}.pbres:empty{display:none}
+.offpick span{min-width:0}.offpick em,.resb em{font-style:normal}
 .pbpick{display:flex;justify-content:space-between;gap:8px;text-align:left;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);padding:9px 10px;font:inherit;cursor:pointer}.pbpick small{color:var(--mute);white-space:nowrap}
 .pbing{display:grid;grid-template-columns:minmax(0,1fr) auto 3.2em 32px;gap:8px;align-items:center;border-top:1px solid var(--line);padding:6px 0}
 .pbing label{display:flex;align-items:center;gap:4px;font-size:14px;color:var(--mute)}.pbing input{width:70px;border:1px solid var(--line);border-radius:8px;padding:6px;font-size:16px;background:var(--bg);color:var(--ink)}.pbing b{text-align:right;font-variant-numeric:tabular-nums}
@@ -374,6 +375,7 @@ svg text{font:13px Archivo,system-ui,sans-serif;fill:var(--mute)}
       <button type="button" class="btn" id="scanclose">Cerrar</button></div>
     </div>
     <div class="shres" id="shres"></div>
+    <div class="shres" id="shoff"></div>
     <details class="add" id="shnew"><summary>Crear alimento nuevo</summary>
       <form class="form" id="f-new">
         <label class="half">Nombre<input name="name" required placeholder="Mi batido de proteínas"></label>
@@ -930,8 +932,48 @@ const libItems=()=>(S.lib.items||[]).map(x=>({...x,mine:true}));
 const findItem=id=>libItems().find(x=>x.id===id)||BASEI.find(x=>x.id===id);
 const calc=(it,a)=>{const k=a/(it.base||1);return{kcal:r0(it.kcal*k),p:r1(it.p*k),c:r1(it.c*k),f:r1(it.f*k)}};
 const amountLabel=(it,a)=>it.unit==='g'?`${r1(a)} g`:(a===1?it.label:`${String(r1(a)).replace('.',',')} × ${it.label}`);
-function openSheet(meal,pick){shMeal=meal||mealNow();shPick=pick||null;$('#shq').value='';$('#sheet').hidden=false;document.body.classList.add('noscroll');renderSheet();if(!pick&&innerWidth>=700)$('#shq').focus()}
+function openSheet(meal,pick){shMeal=meal||mealNow();shPick=pick||null;$('#shq').value='';OFFQ.sh='';offPaint('sh');$('#sheet').hidden=false;document.body.classList.add('noscroll');renderSheet();if(!pick&&innerWidth>=700)$('#shq').focus()}
 function closeSheet(){stopScan();$('#sheet').hidden=true;document.body.classList.remove('noscroll')}
+/* ---------- BÚSQUEDA EN SUPERMERCADOS (Open Food Facts) + IA ---------- */
+const OFFC={},OFFP={};let offT=null,OFFR={sh:[],pb:[]},OFFQ={sh:'',pb:''},OFFST={sh:'',pb:''};
+function offItem(code,pr){const n=pr.nutriments||{},g=k=>{const v=Number(n[k+'_100g']);return isFinite(v)&&v>=0?v:null};
+  let kcal=g('energy-kcal');if(kcal==null&&g('energy')!=null)kcal=g('energy')/4.184;if(kcal==null||kcal>950)return null;
+  const brand=String(Array.isArray(pr.brands)?pr.brands[0]:pr.brands||'').split(',')[0].replace(/^xx:/,'').trim();
+  const nm=String(pr.product_name_es||pr.product_name||'').trim();if(!nm)return null;
+  const sv=Number(pr.serving_quantity);
+  return{code:String(code),name:[nm,brand&&!norm(nm).includes(norm(brand))?brand.replace(/\b\w/g,c=>c.toUpperCase()):''].filter(Boolean).join(' · ').slice(0,80),unit:'g',base:100,def:sv>0&&sv<2000?r0(sv):100,label:'100 g = '+r0(kcal)+' kcal',kcal:r0(kcal),p:r1(g('proteins')||0),c:r1(g('carbohydrates')||0),f:r1(g('fat')||0)}}
+async function offProduct(code){if(OFFP[code]!==undefined)return OFFP[code];
+  try{const r=await fetch('https://world.openfoodfacts.org/api/v2/product/'+code+'.json?fields=product_name,product_name_es,brands,nutriments,serving_quantity');const j=await r.json();OFFP[code]=j&&j.status===1?offItem(code,j.product):null}catch(e){return null}return OFFP[code]}
+async function offSearch(q){q=q.trim().toLowerCase();if(OFFC[q])return OFFC[q];
+  const r=await fetch('https://search.openfoodfacts.org/search?q='+encodeURIComponent(q)+'&page_size=16&langs=es&fields=code,product_name,product_name_es,brands,countries');const j=await r.json();
+  const hits=(j.hits||[]).filter(h=>h.code&&(h.product_name_es||h.product_name));
+  hits.sort((a,b)=>(/spain|españa/i.test(String(b.countries))?1:0)-(/spain|españa/i.test(String(a.countries))?1:0));
+  const items=(await Promise.all(hits.slice(0,10).map(h=>offProduct(h.code)))).filter(Boolean);
+  const seen=new Set();const out=items.filter(x=>{const k=norm(x.name);if(seen.has(k))return false;seen.add(k);return true}).slice(0,8);
+  OFFC[q]=out;return out}
+function offHtml(w){const L=OFFR[w],st=OFFST[w],q=OFFQ[w];if(!q)return'';
+  const head=`<h4>Supermercados · Open Food Facts</h4>`;
+  if(st==='loading')return head+`<div class="empty">Buscando «${esc(q)}»…</div>`;
+  if(st==='ai')return`<h4>Estimado por IA · aproximado</h4><div class="empty">Calculando…</div>`;
+  const rows=L.map((x,i)=>`<button type="button" class="pbpick offpick" data-offpick="${w}:${i}"><span>${esc(x.name)}${x.ai?' <em>IA</em>':''}</span><small>${fmt(x.kcal)} kcal/100 g · P ${dec(x.p)}</small></button>`).join('');
+  const ai=sample?`<button type="button" class="link" data-offai="${w}">${L.length?'¿No es ninguno? Buscar con IA':'Buscar «'+esc(q)+'» con IA'}</button>`:'';
+  return(L.length&&L[0].ai?`<h4>Estimado por IA · aproximado</h4>`:head)+(rows||`<div class="empty">No aparece en supermercados${st==='err'?' (sin conexión)':''}. Prueba con otro nombre (p. ej. «gnocchi»).</div>`)+`<div style="margin-top:6px">${ai}</div>`}
+function offPaint(w){const el=w==='sh'?$('#shoff'):$('#pboff');if(el)el.innerHTML=offHtml(w)}
+function offQueue(w,q){q=String(q||'').trim();clearTimeout(offT);OFFQ[w]=q.length>=3?q:'';OFFR[w]=[];OFFST[w]='';
+  if(!OFFQ[w]){offPaint(w);return}OFFST[w]='loading';offPaint(w);
+  offT=setTimeout(async()=>{try{const L=await offSearch(q);if(OFFQ[w]!==q)return;OFFR[w]=L;OFFST[w]=''}catch(e){if(OFFQ[w]!==q)return;OFFST[w]='err'}offPaint(w)},650)}
+async function offAI(w){const q=OFFQ[w];if(!q||!sample)return;OFFST[w]='ai';offPaint(w);
+  try{const o=await sample.json(`El usuario busca «${q}» para apuntarlo en su diario (está en España). Puede estar mal escrito: interpreta qué producto es. Da hasta 4 opciones reales del supermercado español (marcas como Hacendado/Mercadona, Carrefour, Dia, Lidl o marcas conocidas) con valores nutricionales por 100 g tal como vienen en la etiqueta, y la ración típica en gramos. Si no conoces la marca exacta, da el valor genérico. Responde SOLO JSON: {"productos":[{"nombre":"","marca":"","kcal":0,"proteina":0,"carbohidratos":0,"grasa":0,"racion_g":0}]}`,{cache:false});
+    const arr=(o&&Array.isArray(o.productos)?o.productos:[]).slice(0,4);
+    OFFR[w]=arr.map(x=>{const k=Number(x.kcal);if(!(k>=0&&k<950))return null;const nm=[String(x.nombre||q).trim(),String(x.marca||'').trim()].filter(Boolean).join(' · ').slice(0,80);
+      return{ai:true,name:nm,unit:'g',base:100,def:Number(x.racion_g)>0&&Number(x.racion_g)<2000?r0(x.racion_g):100,label:'IA aprox. · 100 g = '+r0(k)+' kcal',kcal:r0(k),p:r1(Number(x.proteina)||0),c:r1(Number(x.carbohidratos)||0),f:r1(Number(x.grasa)||0)}}).filter(Boolean);OFFST[w]=''}
+  catch(e){OFFST[w]='';OFFR[w]=[];toast(ERR[e&&e.code]||'La IA no ha podido calcularlo.')}offPaint(w)}
+function offPick(key){const [w,i]=key.split(':'),x=OFFR[w]&&OFFR[w][+i];if(!x)return;
+  upsertLib([{...x}]);const it=(S.lib.items||[]).find(y=>norm(y.name)===norm(x.name));if(!it)return;
+  if(w==='sh'){shPick=it.id;$('#shq').value='';OFFQ.sh='';offPaint('sh');renderSheet();$('#shres').scrollTop=0;toast('Guardado en Mis alimentos. Pon los gramos y añade.')}
+  else{PB.ings.push({name:it.name,unit:'g',amt:it.def||100,src:{base:100,kcal:it.kcal,p:it.p,c:it.c,f:it.f},...calc(it,it.def||100)});const f=$('#f-plato');if(f){PB.name=f.name.value;PB.serv=f.serv.value}
+    $('#pbq').value='';OFFQ.pb='';offPaint('pb');$('#pbres').innerHTML='';$('#pbings').innerHTML=pbIngsHtml();$('#pbtot').innerHTML=pbTotHtml()}}
+
 /* ---------- ESCÁNER (Open Food Facts, gratis) ---------- */
 let SCAN=null;
 const scanMsg=t=>{const o=$('#scanmsg');if(o)o.textContent=t};
@@ -974,7 +1016,7 @@ function renderSheet(){
   const names=new Set(libItems().map(x=>norm(x.name)));
   const base=BASEI.filter(x=>match(x)&&!names.has(norm(x.name))).slice(0,q?40:12);
   const row=it=>{const v=calc(it,it.def),open=it.id===shPick;return `<div class="res ${open?'open':''}"><button type="button" class="resb" data-pick="${esc(it.id)}"><span>${esc(it.name)}${it.kind==='plato'?'<em>plato</em>':it.mine?'<em>tuyo</em>':''}<small>${esc(it.unit==='g'?`${it.def} g · ${it.label}`:it.label)}</small></span><b>${fmt(v.kcal)} kcal</b></button>${open?`<div class="qty"><button type="button" class="ib" data-step="-1" aria-label="Menos">−</button><input id="shamt" type="number" inputmode="decimal" value="${it.def}" min="0" step="any"><span>${it.unit==='g'?'g':'ración'}</span><button type="button" class="ib" data-step="1" aria-label="Más">+</button><button type="button" class="btn hot" data-addpick="${esc(it.id)}">Añadir</button><output id="shcalc"></output></div>`:''}</div>`};
-  $('#shres').innerHTML=(mine.length?`<h4>Mis alimentos</h4>${mine.map(row).join('')}`:'')+(base.length?`<h4>Básicos · valores aproximados (BEDCA/USDA)</h4>${base.map(row).join('')}`:'')+(!mine.length&&!base.length?`<div class="empty">No lo encuentro. Créalo abajo o díselo al asistente.</div>`:'');
+  $('#shres').innerHTML=(mine.length?`<h4>Mis alimentos</h4>${mine.map(row).join('')}`:'')+(base.length?`<h4>Básicos · valores aproximados (BEDCA/USDA)</h4>${base.map(row).join('')}`:'')+(!mine.length&&!base.length&&!q?`<div class="empty">No lo encuentro. Créalo abajo o díselo al asistente.</div>`:'');
   updCalc();
 }
 function updCalc(){const o=$('#shcalc'),it=shPick&&findItem(shPick);if(!o||!it)return;const v=calc(it,num($('#shamt').value)||0);o.textContent=`${fmt(v.kcal)} kcal · P ${r0(v.p)} g · C ${r0(v.c)} g · G ${r0(v.f)} g`}
@@ -989,12 +1031,13 @@ function pbTot(){const t={kcal:0,p:0,c:0,f:0};for(const x of PB.ings){t.kcal+=x.
 function pbTotHtml(){const t=pbTot();return`<b>${fmt(t.kcal)} kcal</b> por ración · P ${dec(t.p)} · C ${dec(t.c)} · G ${dec(t.f)}${+PB.serv>1?` <small>(total ${fmt(t.all)} kcal)</small>`:''}`}
 function pbResHtml(){const q=norm($('#pbq')?$('#pbq').value:'');if(!q)return'';const w=q.split(/\s+/).filter(Boolean),m=x=>w.every(k=>norm(x.name).includes(k));
   const r=[...libItems().filter(x=>x.kind!=='plato'&&m(x)),...BASEI.filter(m)].slice(0,8);
-  return r.length?r.map(x=>`<button type="button" class="pbpick" data-pbpick="${esc(x.id)}">${esc(x.name)}<small>${x.unit==='g'?fmt(x.kcal)+' kcal/100 g':esc(x.label)+' · '+fmt(x.kcal)+' kcal'}</small></button>`).join(''):'<div class="empty">No lo encuentro. Créalo antes con «+ Añadir o crear alimento».</div>'}
+  return r.length?r.map(x=>`<button type="button" class="pbpick" data-pbpick="${esc(x.id)}">${esc(x.name)}<small>${x.unit==='g'?fmt(x.kcal)+' kcal/100 g':esc(x.label)+' · '+fmt(x.kcal)+' kcal'}</small></button>`).join(''):''}
 function pbIngsHtml(){return PB.ings.length?PB.ings.map((x,i)=>`<div class="pbing"><span>${esc(x.name)}</span><label><input type="number" inputmode="decimal" min="0" step="any" value="${x.amt}" data-pbamt="${i}"> ${x.unit==='g'?'g':'rac.'}</label><b>${fmt(x.kcal)}</b><button type="button" class="x" data-pbdel="${i}" aria-label="Quitar">×</button></div>`).join(''):'<div class="empty">Busca y añade los ingredientes.</div>'}
 function builderHtml(){return`<div class="card pb"><div class="phtitle"><h3>${PB.id?'Editar plato':'Nuevo plato'}</h3><button type="button" class="x" data-pbclose="1" aria-label="Cerrar">×</button></div>
   <form class="form" id="f-plato"><label class="half">Nombre<input name="name" required maxlength="80" value="${esc(PB.name)}" placeholder="Pasta con pollo"></label><label>Raciones<input name="serv" type="number" inputmode="numeric" min="1" max="20" value="${PB.serv}"></label>
   <label class="full">Añadir ingrediente<input id="pbq" type="search" autocomplete="off" placeholder="Busca: pasta, pollo, aceite…"></label>
   <div class="full pbres" id="pbres"></div>
+  <div class="full pbres" id="pboff"></div>
   <div class="full" id="pbings">${pbIngsHtml()}</div>
   <p class="full pbtot" id="pbtot">${pbTotHtml()}</p>
   <div class="full"><button class="btn hot">Guardar plato</button></div></form></div>`}
@@ -1149,12 +1192,12 @@ $('#scanclose').addEventListener('click',stopScan);
 $('#scanimg').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];e.target.value='';try{SCAN&&SCAN.stop()}catch(x){}SCAN=null;scanImage(f)});
 $('#f-code').addEventListener('submit',e=>{e.preventDefault();e.stopPropagation();gotCode(new FormData(e.target).get('code'))});
 document.addEventListener('input',e=>{const el=e.target;
-  if(el.id==='pbq'){$('#pbres').innerHTML=pbResHtml();return}
+  if(el.id==='pbq'){$('#pbres').innerHTML=pbResHtml();offQueue('pb',el.value);return}
   if(el.dataset&&el.dataset.pbamt!=null){const x=PB.ings[+el.dataset.pbamt];if(x){x.amt=num(el.value)||0;Object.assign(x,calc(x.src,x.amt));const row=el.closest('.pbing');if(row)row.querySelector('b').textContent=fmt(x.kcal);$('#pbtot').innerHTML=pbTotHtml()}return}
   if(el.form&&el.form.id==='f-plato'&&el.name==='serv'){PB.serv=el.value;$('#pbtot').innerHTML=pbTotHtml();return}
   if(el.form&&el.form.id==='f-plato'&&el.name==='name'){PB.name=el.value;return}
   if(el.id==='libq'){LIBQ=el.value;const all=libItems().filter(x=>x.kind!=='plato'),q=norm(LIBQ),w=q.split(/\s+/).filter(Boolean);$('#liblist').innerHTML=libListHtml(q?all.filter(x=>w.every(k=>norm(x.name).includes(k))).slice(0,30):LIBALL?all:[],q,all.length);return}
-  if(e.target.id==='shq'){shPick=null;renderSheet()}if(e.target.id==='shamt')updCalc();woUpd(e)});
+  if(e.target.id==='shq'){shPick=null;renderSheet();offQueue('sh',e.target.value)}if(e.target.id==='shamt')updCalc();woUpd(e)});
 document.addEventListener('change',woUpd);
 function woUpd(e){const f=e.target.closest&&e.target.closest('#f-wo');if(!f)return;const km=f.querySelector('.km');if(km)km.hidden=!SPORTS[f.sport.value].km;const rs=f.querySelector('.rest');if(rs)rs.hidden=!SPORTS[f.sport.value].rest;const o=f.querySelector('#woest');if(o)o.innerHTML=woEstText()}
 $('#prev').onclick=()=>{S.date=addDays(S.date,-1);render()};
@@ -1194,7 +1237,8 @@ document.addEventListener('submit',e=>{const mf=e.target.closest&&e.target.close
   saveDay(S.date);document.activeElement&&document.activeElement.blur();deferHoy=false;renderHoy();renderProg();
 });
 $('#camin').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];e.target.value='';pickPhoto(f)});
-document.addEventListener('click',e=>{const pb=e.target.closest&&e.target.closest('[data-pbnew],[data-pbclose],[data-pbpick],[data-pbdel],[data-pbedit],[data-addplato],[data-liball]');
+document.addEventListener('click',e=>{const ob=e.target.closest&&e.target.closest('[data-offpick],[data-offai]');if(ob){if(ob.dataset.offpick)offPick(ob.dataset.offpick);else offAI(ob.dataset.offai);return}
+  const pb=e.target.closest&&e.target.closest('[data-pbnew],[data-pbclose],[data-pbpick],[data-pbdel],[data-pbedit],[data-addplato],[data-liball]');
   if(pb){const d=pb.dataset;
     if(d.pbnew){Object.assign(PB,{open:true,id:null,name:'',serv:1,ings:[]});renderLib();setTimeout(()=>$('#f-plato input[name=name]')?.focus(),0)}
     if(d.pbclose){PB.open=false;renderLib()}
