@@ -153,6 +153,28 @@ details.add summary{cursor:pointer;font-weight:600;padding:10px 0}
 .scanv{position:relative;border-radius:10px;overflow:hidden;background:#000;aspect-ratio:4/3;max-height:42svh}.scanv video{width:100%;height:100%;object-fit:cover;display:block}
 .scanv i{position:absolute;left:12%;right:12%;top:45%;height:2px;background:var(--hot);box-shadow:0 0 8px var(--hot)}
 .scanrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.scanrow input{flex:1;min-width:140px;border:1px solid var(--line);border-radius:12px;padding:10px;font-size:16px;background:var(--bg);color:var(--ink)}
+.dhead{margin-top:24px;border-block:1px solid var(--line);padding:10px 0}
+.dtop{display:flex;justify-content:space-between;align-items:center}.dtop h2{font-size:clamp(24px,4vw,30px);font-weight:800}
+.dsum{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) minmax(0,1.3fr);gap:6px;margin-top:10px;text-align:right}
+.dsum div{display:grid}.dsum small{color:var(--mute);font-size:13px}.dsum b{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}.dsum .kc b{font-size:24px;font-weight:800}
+.mcards{display:grid;gap:10px;margin-top:12px}
+.mcard{background:var(--panel);border-radius:16px;overflow:hidden}
+.mhead{display:grid;grid-template-columns:34px minmax(0,1fr) auto 40px;align-items:center;gap:10px;padding:14px 12px 14px 14px}
+.mico svg{width:30px;height:30px;display:block}
+.mname{border:0;background:none;padding:0;text-align:left;font:inherit;font-size:20px;font-weight:700;color:var(--ink);cursor:pointer}
+.mk{display:grid;text-align:right;line-height:1.1}.mk b{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}.mk small{color:var(--mute);font-size:13px}
+.mplus{border:0;background:none;color:var(--hot);font-size:34px;font-weight:500;line-height:1;width:40px;height:40px;cursor:pointer}
+.msum{display:grid;grid-template-columns:minmax(0,1fr) 40px;align-items:center;width:100%;border:0;border-top:1px solid var(--line);background:none;color:var(--ink);font:inherit;padding:10px 12px 10px 58px;cursor:pointer}
+.msum em{font-style:normal;color:var(--mute);text-align:center}
+.mrow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));text-align:right;font-variant-numeric:tabular-nums;font-size:16px;gap:6px}
+.mrow.sm{font-size:14px;color:var(--mute);margin-right:40px;margin-top:4px}
+.mitem{border-top:1px solid var(--line);padding:10px 12px 10px 58px}
+.mi1{display:grid;grid-template-columns:minmax(0,1fr) auto 32px;align-items:center;gap:8px}.mi1 span{display:block;font-size:16px}.mi1 small{color:var(--ok);font-size:14px}.mi1 b{font-size:17px;font-variant-numeric:tabular-nums}
+.mact{display:flex;border-top:1px solid var(--line);background:color-mix(in srgb,var(--ink) 4%,transparent)}
+.mact button{flex:1;border:0;border-right:1px solid var(--line);background:none;color:var(--hot);font:inherit;font-size:15px;font-weight:600;padding:12px 4px;cursor:pointer;white-space:nowrap}.mact button:last-child{border-right:0}
+.mform{display:flex;gap:8px;align-items:end;padding:10px 12px;border-top:1px solid var(--line);flex-wrap:wrap}.mform label{display:grid;gap:4px;font-size:13px;color:var(--mute);flex:1;min-width:150px}
+.mform input{border:1px solid var(--line);border-radius:10px;padding:9px 10px;font-size:16px;background:var(--bg);color:var(--ink)}
+@media(max-width:420px){.dsum b{font-size:15px}.mrow{font-size:14px}.msum,.mitem{padding-left:14px}}
 .composer textarea{border:1px solid var(--line);border-radius:14px;padding:11px 12px;font-size:16px;resize:none;min-height:48px;max-height:140px;background:var(--bg)}
 .welcome{color:var(--mute);font-size:15px}
 .welcome b{color:var(--ink)}
@@ -423,6 +445,34 @@ function balanceCard(date){const B=balance(date);
   <div class="eq"><div><b>${fmt(B.eat)}</b>Comido</div><i>−</i><div><b>${fmt(B.out)}</b>Quemado</div><i>=</i><div class="${cls}"><b>${sgn(B.bal)}</b>${B.bal<0?'Déficit':B.bal>0?'Superávit':'Equilibrio'}</div></div>
   <p class="hint" style="margin:8px 0 0">Quemado = cuerpo en reposo ${fmt(B.bmr)} + digestión ${fmt(B.dig)} + ejercicio ${fmt(B.ex)} + pasos ${fmt(B.st)}.${date===today()?' El de hoy cambia según apuntes.':''}</p></div>`}
 
+/* ---------- DIARIO DE COMIDAS ---------- */
+const MOPEN={};let DIAHIDE=false,MACT=null;
+const MICON={
+ desayuno:'<svg viewBox="0 0 32 32" fill="none" stroke-linecap="round" stroke-width="2.2"><path d="M6 21a10 10 0 0 1 20 0z" fill="#f5b400" stroke="none"/><path d="M3 25h26M16 4v4M6 9l2.5 2.5M26 9l-2.5 2.5M2 17h3M27 17h3" stroke="#f5b400"/></svg>',
+ comida:'<svg viewBox="0 0 32 32" fill="none" stroke-linecap="round" stroke-width="2.2"><circle cx="16" cy="16" r="6.5" fill="var(--water)"/><path d="M16 2v4M16 26v4M2 16h4M26 16h4M6 6l3 3M23 23l3 3M26 6l-3 3M9 23l-3 3" stroke="var(--water)"/></svg>',
+ merienda:'<svg viewBox="0 0 32 32" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2"><path d="M6 12h17v7a7 7 0 0 1-7 7h-3a7 7 0 0 1-7-7z" fill="var(--c)" stroke="var(--c)"/><path d="M23 14h2a3 3 0 0 1 0 6h-2M11 4c-1 2 1 3 0 5M16 4c-1 2 1 3 0 5" stroke="var(--c)"/></svg>',
+ cena:'<svg viewBox="0 0 32 32" fill="none" stroke-linecap="round" stroke-width="2.2"><path d="M7 20a9 9 0 0 1 18 0z" fill="var(--hot)" stroke="none"/><path d="M3 20h26M7 24h18M11 28h10M16 4v4M7 9l2 2M25 9l-2 2" stroke="var(--hot)"/></svg>',
+ snack:'<svg viewBox="0 0 32 32"><path d="M20 4a12 12 0 1 0 8 19A10 10 0 0 1 20 4z" fill="var(--f)"/></svg>'};
+const MNAME={desayuno:'Desayuno',comida:'Comida',merienda:'Merienda',cena:'Cena',snack:'Picoteo / Otros'};
+const dec=v=>(Math.round((+v||0)*10)/10).toLocaleString('es-ES',{maximumFractionDigits:1});
+const pct=(k,T)=>T.kcal?Math.round(k/T.kcal*100)+'%':'—';
+function mrow(f,c,p,k,T,cls){return`<div class="mrow ${cls||''}"><span>${dec(f)}</span><span>${dec(c)}</span><span>${dec(p)}</span><span>${pct(k,T)}</span></div>`}
+function diaryHtml(d,t,T,foodsBy){
+  const head=`<div class="dhead"><div class="dtop"><h2>Comidas</h2><button type="button" class="link" data-diahide="1">${DIAHIDE?'Mostrar ▾':'Ocultar ▴'}</button></div>
+    ${DIAHIDE?'':`<div class="dsum"><div><small>Grasa</small><b>${dec(t.f)}</b></div><div><small>Carbh</small><b>${dec(t.c)}</b></div><div><small>Prot</small><b>${dec(t.p)}</b></div><div><small>Objetivo</small><b>${pct(t.kcal,T)}</b></div><div class="kc"><small>Calorías</small><b>${fmt(t.kcal)}</b></div></div>`}</div>`;
+  const tomorrow=addDays(S.date,1),copyDef=S.date===today()?tomorrow:today();
+  const cards=foodsBy.map(m=>{const has=m.it.length,open=has&&MOPEN[m.k],sum=k=>m.it.reduce((a,x)=>a+(+x[k]||0),0);
+    return`<div class="mcard${open?' open':''}">
+      <div class="mhead"><i class="mico">${MICON[m.k]}</i><button type="button" class="mname" ${has?`data-mtog="${m.k}"`:`data-sheet="${m.k}"`}>${MNAME[m.k]}</button>
+        ${has?`<div class="mk"><b>${fmt(m.kc)}</b><small>Calorías</small></div>`:'<span></span>'}<button type="button" class="mplus" data-sheet="${m.k}" aria-label="Añadir a ${MNAME[m.k]}">+</button></div>
+      ${has?`<button type="button" class="msum" data-mtog="${m.k}" aria-expanded="${!!open}">${mrow(sum('f'),sum('c'),sum('p'),m.kc,T)}<em>${open?'▴':'▾'}</em></button>`:''}
+      ${open?`${m.it.map(x=>`<div class="mitem"><div class="mi1"><div><span>${esc(x.name)}</span>${x.qty?`<small>${esc(x.qty)}</small>`:''}</div><b>${fmt(x.kcal)}</b><button class="x" data-del-food="${esc(x.id)}" aria-label="Borrar ${esc(x.name)}">×</button></div>${mrow(x.f,x.c,x.p,x.kcal,T,'sm')}</div>`).join('')}
+        <div class="mact"><button type="button" data-mact="copy:${m.k}">Copiar</button><button type="button" data-mact="save:${m.k}">Guardar comida</button><button type="button" data-mcam="${m.k}">Cámara</button></div>
+        ${MACT==='copy:'+m.k?`<form class="mform" data-mcopy="${m.k}"><label>Copiar a<input type="date" name="to" value="${copyDef}" max="${tomorrow}" required></label><button class="btn hot">Copiar</button></form>`:''}
+        ${MACT==='save:'+m.k?`<form class="mform" data-msave="${m.k}"><label>Nombre<input name="name" required maxlength="80" value="Mi ${esc(MNAME[m.k].split(' ')[0].toLowerCase())}"></label><button class="btn hot">Guardar</button></form>`:''}`:''}
+    </div>`}).join('');
+  return head+`<div class="mcards">${cards}</div>`}
+
 /* ---------- HOY ---------- */
 function renderHoy(){
   const host=$('#v-hoy');
@@ -459,10 +509,7 @@ function renderHoy(){
   ${balanceCard(S.date)}
 
   ${recipeCard()}
-  <div class="secthead"><h2>Comidas</h2><span>${fmt(t.kcal)} kcal</span></div>
-  <button class="btn hot addbig" data-sheet="${mealNow()}">+ Añadir alimento</button>
-  ${foodsBy.filter(m=>m.it.length||m.k!=='snack').map(m=>`<div class="meal"><h3>${m.n}<span>${m.kc?fmt(m.kc)+' kcal':''}<button class="plus" data-sheet="${m.k}" aria-label="Añadir a ${m.n}">+</button></span></h3>
-    ${m.it.map(x=>`<div class="row"><div class="n">${esc(x.name)}<small>${x.qty?esc(x.qty)+' · ':''}P ${r0(x.p)} · C ${r0(x.c)} · G ${r0(x.f)}</small></div><div class="k">${fmt(x.kcal)}</div><button class="x" data-del-food="${esc(x.id)}" aria-label="Borrar ${esc(x.name)}">×</button></div>`).join('')}</div>`).join('')}
+  ${diaryHtml(d,t,T,foodsBy)}
   <p class="hint">O <button data-go="chat">díselo al asistente</button>: «he comido un plato de macarrones con tomate». Lo que apuntas se guarda en Mis alimentos.</p>
 
   <div class="secthead"><h2>Entrenamiento</h2><span>${fmt(t.min)} min · ${fmt(t.burn-t.stepsK)} kcal${t.stepsK?` · pasos +${fmt(t.stepsK)}`:''}</span></div>
@@ -1034,7 +1081,13 @@ document.addEventListener('change',e=>{
     const a=document.activeElement;a&&a.blur&&a.matches('select,[type=checkbox]')&&a.blur();renderPerfil()}
 });
 document.addEventListener('focusout',()=>setTimeout(()=>{if(deferHoy&&!$('#v-hoy').contains(document.activeElement)){deferHoy=false;renderHoy()}},0));
-document.addEventListener('submit',e=>{
+document.addEventListener('submit',e=>{const mf=e.target.closest&&e.target.closest('[data-mcopy],[data-msave]');
+  if(mf){e.preventDefault();const k=mf.dataset.mcopy||mf.dataset.msave,items=day(S.date).foods.filter(x=>(x.meal||'snack')===k),fd=new FormData(mf);
+    if(mf.dataset.mcopy){const to=String(fd.get('to')||'');if(!/^\d{4}-\d{2}-\d{2}$/.test(to))return;const d2=editDay(to);d2.foods.push(...items.map(x=>({...x,id:uid()})));saveDay(to);
+      toast(`Copiado: ${items.length} ${items.length===1?'alimento':'alimentos'} a ${parse(to).toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'short'})}`)}
+    else{const name=String(fd.get('name')||'').trim().slice(0,80);if(!name)return;const sm=kk=>items.reduce((a,x)=>a+(+x[kk]||0),0);
+      upsertLib([{name,unit:'ración',base:1,def:1,label:'1 comida: '+items.map(x=>x.name).join(', ').slice(0,120),kcal:r0(sm('kcal')),p:r1(sm('p')),c:r1(sm('c')),f:r1(sm('f'))}]);toast('Guardada en Mis alimentos: '+name)}
+    MACT=null;document.activeElement&&document.activeElement.blur();deferHoy=false;renderHoy();renderProg();return}
   e.preventDefault();const f=e.target;
   if(f.id==='composer'){if(busy){ctl&&ctl.abort();return}const q=$('#q');const v=q.value;q.value='';q.style.height='';send(v);return}
   if(f.id==='f-new'){const fd=new FormData(f);const it={name:String(fd.get('name')).trim().slice(0,80),unit:'ud',base:1,def:1,label:String(fd.get('label')||'').trim().slice(0,40)||'1 ración',kcal:r0(fd.get('kcal')),p:r1(fd.get('p')),c:r1(fd.get('c')),f:r1(fd.get('f'))};
@@ -1051,7 +1104,13 @@ document.addEventListener('submit',e=>{
   saveDay(S.date);document.activeElement&&document.activeElement.blur();deferHoy=false;renderHoy();renderProg();
 });
 $('#camin').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];e.target.value='';pickPhoto(f)});
-document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('[data-unphoto]')){PHOTO=null;renderPhoto()}
+document.addEventListener('click',e=>{const mb=e.target.closest&&e.target.closest('[data-mtog],[data-diahide],[data-mact],[data-mcam]');
+  if(mb){if(mb.dataset.mtog){MOPEN[mb.dataset.mtog]=!MOPEN[mb.dataset.mtog];MACT=null}
+    if(mb.dataset.diahide)DIAHIDE=!DIAHIDE;
+    if(mb.dataset.mact)MACT=MACT===mb.dataset.mact?null:mb.dataset.mact;
+    if(mb.dataset.mcam){go('chat');const q=$('#q');if(q&&!q.value)q.value='Esto es mi '+MNAME[mb.dataset.mcam].split(' ')[0].toLowerCase()+'. ';$('#camin').click();return}
+    renderHoy();return}
+  if(e.target.closest&&e.target.closest('[data-unphoto]')){PHOTO=null;renderPhoto()}
   const b=e.target.closest&&e.target.closest('[data-phday],[data-phmon],[data-phdel]');if(!b)return;
   if(b.dataset.phday){PH.sel=b.dataset.phday;renderProg()}
   if(b.dataset.phmon){PH.m+=+b.dataset.phmon;if(PH.m<0){PH.m=11;PH.y--}if(PH.m>11){PH.m=0;PH.y++}renderProg()}
