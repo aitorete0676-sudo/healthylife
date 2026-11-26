@@ -135,6 +135,19 @@ details.add summary{cursor:pointer;font-weight:600;padding:10px 0}
 .photo{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:14px;color:var(--mute)}.photo img{width:64px;height:64px;object-fit:cover;border-radius:10px}
 .photo button{border:0;background:none;color:var(--mute);font-size:22px;cursor:pointer}
 .m.u img{display:block;width:140px;max-width:100%;border-radius:10px;margin-bottom:6px}
+.cal .calnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.cal .calnav b{font-size:18px}.cal .calnav b::first-letter,.phtitle h3::first-letter{text-transform:uppercase}
+.calgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}.calgrid em{font-style:normal;text-align:center;font-size:12px;color:var(--mute);padding-bottom:2px}
+.cd{position:relative;aspect-ratio:1;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);padding:0;overflow:hidden;cursor:pointer;font:inherit}
+.cd:disabled{opacity:.35;cursor:default}.cd i{position:absolute;left:5px;top:3px;font-style:normal;font-size:13px;font-weight:700}
+.cd img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.cd.has i{color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8)}
+.cd.today{border-color:var(--hot)}.cd.sel{outline:3px solid var(--hot);outline-offset:-1px}
+.phday,.cmp{margin-top:12px}.phtitle{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px}.phtitle h3{font-size:18px;font-weight:800}.phtitle span,.phtitle label{color:var(--mute);font-size:14px}
+.phtitle select{font:inherit;border:1px solid var(--line);border-radius:8px;padding:4px 6px;background:var(--bg);color:var(--ink)}
+.phgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.ph{position:relative;aspect-ratio:3/4;border-radius:12px;overflow:hidden;background:var(--panel)}.ph img{width:100%;height:100%;object-fit:cover;display:block}
+.ph.empty,.ph.missing{display:grid;place-items:center;color:var(--mute);font-size:13px}.ph .x{position:absolute;right:6px;top:6px;width:auto;background:rgba(0,0,0,.55);color:#fff;border-radius:999px;min-width:30px;height:30px}.ph .x.sure{background:var(--hot);padding:0 8px}
+.phadd{aspect-ratio:3/4;border:2px dashed var(--line);border-radius:12px;display:grid;place-content:center;text-align:center;color:var(--mute);font-size:13px;cursor:pointer}.phadd span{font-size:30px;line-height:1;color:var(--ink)}
+.cmpgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.phhead{display:flex;justify-content:space-between;font-size:14px;margin-bottom:4px}.phhead span{color:var(--mute)}
 .composer textarea{border:1px solid var(--line);border-radius:14px;padding:11px 12px;font-size:16px;resize:none;min-height:48px;max-height:140px;background:var(--bg)}
 .welcome{color:var(--mute);font-size:15px}
 .welcome b{color:var(--ink)}
@@ -557,6 +570,53 @@ Responde SOLO con JSON: {"recetas":[{"nombre":"","descripcion":"una frase","minu
 }
 function rerenderRecipe(){document.querySelectorAll('#recipe').forEach(el=>{const w=document.createElement('div');w.innerHTML=recipeCard();el.replaceWith(w.firstElementChild)})}
 /* ---------- PROGRESO ---------- */
+/* ---------- FOTOS DE PROGRESO ---------- */
+// Claude: assets de la cuenta (ids en el día). Web: IndexedDB de este navegador.
+let ASSETS=null;const PH={y:null,m:null,sel:null,cmp:null};const PURL={};
+const idb=()=>new Promise((ok,bad)=>{const r=indexedDB.open('healthy-life-photos',1);r.onupgradeneeded=()=>r.result.createObjectStore('p',{keyPath:'id'});r.onsuccess=()=>ok(r.result);r.onerror=()=>bad(r.error)});
+const idbDo=(mode,fn)=>idb().then(db=>new Promise((ok,bad)=>{const tx=db.transaction('p',mode),st=tx.objectStore('p'),r=fn(st);tx.oncomplete=()=>ok(r&&r.result);tx.onerror=()=>bad(tx.error)}));
+const photosOf=date=>(day(date).photos||[]).filter(x=>x&&typeof x.id==='string');
+function photoSrc(x){if(/^[0-9a-f]{32}$/.test(x.id))return'/_blob/'+x.id;return PURL[x.id]||''}
+async function hydratePhotos(){for(const im of document.querySelectorAll('img[data-pid]')){const id=im.dataset.pid;if(im.getAttribute('src'))continue;
+  if(!PURL[id]){try{const r=await idbDo('readonly',st=>st.get(id));if(r&&r.blob)PURL[id]=URL.createObjectURL(r.blob)}catch(e){}}
+  if(PURL[id])im.src=PURL[id];else im.closest('.ph')?.classList.add('missing')}}
+async function addPhotos(date,files){const list=[...files].filter(f=>/^image\//.test(f.type)).slice(0,6);if(!list.length)return;
+  if(photosOf(date).length+list.length>6){toast('Máximo 6 fotos por día.');return}
+  toast('Subiendo '+list.length+(list.length>1?' fotos…':' foto…'));const add=[];
+  for(const f of list){try{const {blob}=await shrink(f,1440,.85);
+    if(ASSETS){const a=await ASSETS.upload(blob);if(!/^[0-9a-f]{32}$/.test(a.id))throw 0;add.push({id:a.id,t:Date.now()})}
+    else{const id='l'+uid();await idbDo('readwrite',st=>st.put({id,date,blob,t:Date.now()}));add.push({id,t:Date.now()})}}catch(e){toast('No he podido guardar una foto'+(e&&e.code?' ('+e.code+')':'')+'.')}}
+  if(!add.length)return;const d=editDay(date);d.photos=[...(d.photos||[]),...add];saveDay(date);renderProg()}
+async function delPhoto(date,id){const d=editDay(date);d.photos=(d.photos||[]).filter(x=>x.id!==id);saveDay(date);renderProg();
+  try{if(/^[0-9a-f]{32}$/.test(id)){ASSETS&&await ASSETS.delete(id)}else{await idbDo('readwrite',st=>st.delete(id));if(PURL[id]){URL.revokeObjectURL(PURL[id]);delete PURL[id]}}}catch(e){}}
+const photoDays=()=>Object.keys(S.days).filter(k=>photosOf(k).length).sort();
+const longDate=k=>parse(k).toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+function photoCard(k,cls){const ps=photosOf(k),w=day(k).weight;return`<div class="phcol ${cls||''}"><div class="phhead"><b>${esc(parse(k).toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'}))}</b>${w?`<span>${r1(w)} kg</span>`:''}</div>${ps.length?`<div class="ph"><img data-pid="${esc(ps[0].id)}" ${photoSrc(ps[0])?`src="${photoSrc(ps[0])}"`:''} alt="Foto del ${esc(k)}"></div>`:'<div class="ph empty">Sin fotos</div>'}</div>`}
+function photosSection(){const t0=today();if(PH.y==null){const n=parse(t0);PH.y=n.getFullYear();PH.m=n.getMonth()}if(!PH.sel)PH.sel=t0;
+  const pd=photoDays(),first=new Date(PH.y,PH.m,1),off=(first.getDay()+6)%7,dim=new Date(PH.y,PH.m+1,0).getDate();
+  const key=dd=>`${PH.y}-${String(PH.m+1).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+  let cells='';for(let i=0;i<off;i++)cells+='<span></span>';
+  for(let dd=1;dd<=dim;dd++){const k=key(dd),ps=photosOf(k),fut=k>t0,src=ps.length?photoSrc(ps[0]):'';
+    cells+=`<button type="button" class="cd${k===PH.sel?' sel':''}${k===t0?' today':''}${ps.length?' has':''}" data-phday="${k}" ${fut?'disabled':''}>${ps.length?`<img data-pid="${esc(ps[0].id)}" ${src?`src="${src}"`:''} alt="">`:''}<i>${dd}</i></button>`}
+  const sel=PH.sel,ps=photosOf(sel);
+  const other=pd.filter(k=>k!==sel);if(!PH.cmp||PH.cmp===sel||!photosOf(PH.cmp).length)PH.cmp=sel<(pd[pd.length-1]||'')?pd[pd.length-1]:(other[0]||null);
+  const [a,b]=PH.cmp&&ps.length?[sel,PH.cmp].sort():[null,null];const wa=a&&day(a).weight,wb=b&&day(b).weight;
+  const dk=a?Math.round((parse(b)-parse(a))/864e5):0;
+  return`<div class="secthead"><h2>Fotos de progreso</h2><span>${pd.length} ${pd.length===1?'día':'días'} con fotos</span></div>
+  <div class="cal card">
+    <div class="calnav"><button type="button" class="ib" data-phmon="-1" aria-label="Mes anterior">‹</button><b>${esc(first.toLocaleDateString('es-ES',{month:'long',year:'numeric'}))}</b><button type="button" class="ib" data-phmon="1" aria-label="Mes siguiente" ${PH.y*12+PH.m>=parse(t0).getFullYear()*12+parse(t0).getMonth()?'disabled':''}>›</button></div>
+    <div class="calgrid"><em>L</em><em>M</em><em>X</em><em>J</em><em>V</em><em>S</em><em>D</em>${cells}</div>
+  </div>
+  <div class="card phday">
+    <div class="phtitle"><h3>${esc(longDate(sel))}</h3>${day(sel).weight?`<span>${r1(day(sel).weight)} kg</span>`:''}</div>
+    <div class="phgrid">${ps.map(x=>{const src=photoSrc(x);return`<div class="ph"><img data-pid="${esc(x.id)}" ${src?`src="${src}"`:''} alt="Foto de progreso"><button type="button" class="x" data-phdel="${esc(x.id)}" aria-label="Borrar foto">×</button></div>`}).join('')}
+      ${ps.length<6?`<label class="phadd"><input type="file" id="phin" accept="image/*" multiple hidden><span>+</span>Añadir foto</label>`:''}</div>
+    ${!ASSETS&&WEB?`<p class="hint">En la web las fotos se guardan en este móvil o navegador, no en la nube.</p>`:''}
+  </div>
+  ${ps.length&&pd.length>1?`<div class="card cmp"><div class="phtitle"><h3>Comparar</h3><label>con <select id="phcmp">${other.map(k=>`<option value="${k}" ${k===PH.cmp?'selected':''}>${esc(parse(k).toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'}))}</option>`).join('')}</select></label></div>
+    <div class="cmpgrid">${photoCard(a,'')}${photoCard(b,'')}</div>
+    <p class="hint" style="margin:8px 0 0">${dk} ${dk===1?'día':'días'} de diferencia${wa&&wb?` · ${wb-wa>0?'+':''}${r1(wb-wa)} kg`:''}.</p></div>`:''}`}
+
 function renderProg(){
   const host=$('#v-prog');const T=targets();const t0=today();
   const last=n=>Array.from({length:n},(_,i)=>addDays(t0,-(n-1-i)));
@@ -585,13 +645,14 @@ function renderProg(){
   </div>
   <div class="secthead"><h2>Peso</h2><span>${ws.length} registros</span></div>
   <div class="fig" id="wfig"></div>
+  ${photosSection()}
   <div class="secthead"><h2>Calorías, 14 días</h2><span>línea roja: objetivo ${fmt(T.kcal)}</span></div>
   ${d14.map(k=>{const v=totals(k).kcal;return`<div class="krow"><span>${esc(parse(k).toLocaleDateString('es-ES',{weekday:'short',day:'numeric'}))}</span><div class="t"><i class="${v>T.kcal*1.1?'over':''}" style="width:${(v/mx*100).toFixed(1)}%"></i><em style="left:${(T.kcal/mx*100).toFixed(1)}%"></em></div><b>${v?fmt(v):'—'}</b></div>`}).join('')}
   <div class="secthead"><h2>Balance, 14 días</h2><span>comido − quemado</span></div>
   ${bl.length?bl.map(({k,B})=>`<div class="krow brow"><span>${esc(parse(k).toLocaleDateString('es-ES',{weekday:'short',day:'numeric'}))}</span><div class="t"><em></em><i class="${B.bal<0?'neg':'pos'}" style="${B.bal<0?'right:50%':'left:50%'};width:${(Math.abs(B.bal)/bmx*50).toFixed(1)}%"></i></div><b class="${B.bal<0?'neg':'pos'}" title="${fmt(B.eat)} − ${fmt(B.out)}">${sgn(B.bal)}</b></div>`).join(''):`<div class="empty">${balance(t0)?'Apunta comidas para ver tu balance.':'Completa tu perfil para ver el balance.'}</div>`}
   <div class="secthead"><h2>Entrenos, 30 días</h2><span>${wo30.length} ${wo30.length===1?'sesión':'sesiones'}</span></div>
   <div class="wlist">${wo30.length?wo30.slice().reverse().slice(0,12).map(w=>`<div class="row" style="border-top:1px solid var(--line)"><span class="k" style="color:var(--mute);font-weight:500">${esc(parse(w.date).toLocaleDateString('es-ES',{day:'numeric',month:'short'}))}</span><div class="n">${esc(w.name)}<small>${esc(w.type)} · ${r0(w.min)} min</small></div><div class="k">${fmt(w.kcal)} kcal</div></div>`).join(''):'<div class="empty">Aún no hay entrenos.</div>'}</div>`;
-  drawWeight();
+  drawWeight();hydratePhotos();
 }
 let wObs=null;
 function drawWeight(){
@@ -940,7 +1001,12 @@ document.addEventListener('submit',e=>{
   saveDay(S.date);document.activeElement&&document.activeElement.blur();deferHoy=false;renderHoy();renderProg();
 });
 $('#camin').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];e.target.value='';pickPhoto(f)});
-document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('[data-unphoto]')){PHOTO=null;renderPhoto()}});
+document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('[data-unphoto]')){PHOTO=null;renderPhoto()}
+  const b=e.target.closest&&e.target.closest('[data-phday],[data-phmon],[data-phdel]');if(!b)return;
+  if(b.dataset.phday){PH.sel=b.dataset.phday;renderProg()}
+  if(b.dataset.phmon){PH.m+=+b.dataset.phmon;if(PH.m<0){PH.m=11;PH.y--}if(PH.m>11){PH.m=0;PH.y++}renderProg()}
+  if(b.dataset.phdel){if(b.dataset.sure){delPhoto(PH.sel,b.dataset.phdel)}else{b.dataset.sure='1';b.textContent='¿Borrar?';b.classList.add('sure');setTimeout(()=>{if(b.isConnected){delete b.dataset.sure;b.textContent='×';b.classList.remove('sure')}},3000)}}});
+document.addEventListener('change',e=>{if(e.target.id==='phin'){const f=[...(e.target.files||[])];e.target.value='';addPhotos(PH.sel,f)}if(e.target.id==='phcmp'){PH.cmp=e.target.value;renderProg()}});
 $('#q').addEventListener('input',e=>{e.target.style.height='';e.target.style.height=Math.min(140,e.target.scrollHeight)+'px'});
 $('#q').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&innerWidth>=700){e.preventDefault();$('#composer').requestSubmit()}});
 addEventListener('resize',()=>{if(innerWidth>=1000&&document.body.dataset.view==='chat')go('hoy')});
@@ -949,7 +1015,7 @@ async function boot(){
   go('hoy');render();
   if(!window.claude){WEB=true;S.mode='local';loadLocal();sample=geminiSample();render();return}
   let db=null,user=null;
-  try{[db,user,sample]=await Promise.all([claude.use('db'),claude.use('user'),claude.use('sample')])}catch(e){}
+  try{[db,user,sample,ASSETS]=await Promise.all([claude.use('db'),claude.use('user'),claude.use('sample'),claude.use('assets')])}catch(e){}
   const id=user?await user.id():null;
   if(!db||!id){S.mode='local';loadLocal();render();return}
   col=db.collection('data/users/'+id);
