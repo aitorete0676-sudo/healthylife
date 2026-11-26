@@ -175,6 +175,7 @@ details.add summary{cursor:pointer;font-weight:600;padding:10px 0}
 .mform{display:flex;gap:8px;align-items:end;padding:10px 12px;border-top:1px solid var(--line);flex-wrap:wrap}.mform label{display:grid;gap:4px;font-size:13px;color:var(--mute);flex:1;min-width:150px}
 .mform input{border:1px solid var(--line);border-radius:10px;padding:9px 10px;font-size:16px;background:var(--bg);color:var(--ink)}
 @media(max-width:420px){.dsum b{font-size:15px}.mrow{font-size:14px}.msum,.mitem{padding-left:14px}}
+.pwhere{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0 12px;font-size:14px;color:var(--mute)}.pwhere select,.pwhere input{font:inherit;font-size:15px;border:1px solid var(--line);border-radius:10px;padding:7px 8px;background:var(--bg);color:var(--ink)}
 .pmeal{font-size:14px;color:var(--mute);display:flex;gap:6px;align-items:center}.pmeal select{font:inherit;border:1px solid var(--line);border-radius:8px;padding:4px 6px;background:var(--bg);color:var(--ink)}
 .plist{display:grid;gap:10px;margin-top:12px}
 .plato{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;background:var(--panel);border-radius:16px;padding:14px}
@@ -186,6 +187,24 @@ details.add summary{cursor:pointer;font-weight:600;padding:10px 0}
 .pbing label{display:flex;align-items:center;gap:4px;font-size:14px;color:var(--mute)}.pbing input{width:70px;border:1px solid var(--line);border-radius:8px;padding:6px;font-size:16px;background:var(--bg);color:var(--ink)}.pbing b{text-align:right;font-variant-numeric:tabular-nums}
 .pbtot{margin:4px 0 0;color:var(--mute)}.pbtot b{color:var(--ink);font-size:18px}
 .memd{margin-top:28px}
+.ptarget{margin-top:10px;text-align:center;padding:20px 16px}.ptarget>small{color:var(--mute);font-size:14px}
+.pk{display:flex;justify-content:center;align-items:baseline;gap:6px}.pk b{font-size:clamp(48px,14vw,64px);font-weight:800;letter-spacing:-.02em;color:var(--hot);font-variant-numeric:tabular-nums}.pk span{color:var(--mute);font-size:18px}
+.pmac{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:10px}.pmac div{display:grid;gap:2px;padding:10px 4px;border-radius:12px;background:color-mix(in srgb,var(--k) 14%,transparent)}.pmac b{font-size:17px;color:var(--ink)}.pmac span{font-size:12px;color:var(--mute)}
+.pgoal{margin-top:16px;text-align:left}.pgl{display:flex;justify-content:space-between;font-size:13px;color:var(--mute)}.pgl b{color:var(--ink);font-size:15px}
+.pgoal .t{height:8px;border-radius:4px;background:color-mix(in srgb,var(--ink) 10%,transparent);margin:6px 0;overflow:hidden}.pgoal .t i{display:block;height:100%;background:var(--ok);border-radius:4px}.pgoal small{color:var(--mute);font-size:13px}
+.psec{font-size:18px;font-weight:800;margin:26px 0 10px}
+.seg{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px}
+.seg label{position:relative;display:grid;gap:2px;text-align:center;border:1.5px solid var(--line);border-radius:14px;padding:10px 10px;cursor:pointer;background:var(--bg)}
+.seg label b{font-size:15px}.seg label small{font-size:12px;color:var(--mute)}.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label.on{border-color:var(--hot);background:var(--hotsoft)}.seg label:has(input:focus-visible){outline:2px solid var(--hot)}
+.seg.two{grid-template-columns:repeat(2,minmax(0,1fr))}.seg.mini{display:flex;gap:6px}.seg.mini label{padding:7px 12px}
+.plist2{background:var(--panel);border-radius:16px;overflow:hidden}
+.prow{display:flex!important;flex-direction:row;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-top:1px solid var(--line);font-size:16px}.plist2>.prow:first-child{border-top:0}
+.prow>span{display:grid}.prow small{color:var(--mute);font-size:12px}.prow.col{flex-direction:column!important;align-items:stretch}
+.prow .pin{display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;gap:6px}.prow .pin input{flex:none;width:84px!important;text-align:right;border:0;background:transparent;font-size:17px;font-weight:600;color:var(--ink);padding:4px 0}.pin input:focus{outline:none;border-bottom:2px solid var(--hot)}.pin em{font-style:normal;color:var(--mute);font-size:14px;min-width:2.2em}
+.ptxt{border:1px solid var(--line);border-radius:10px;padding:10px;font-size:16px;background:var(--bg);color:var(--ink);width:100%}
+.tog{appearance:none;-webkit-appearance:none;width:46px;height:28px;border-radius:14px;background:var(--line);position:relative;flex:none;cursor:pointer;transition:background .15s}.tog::after{content:'';position:absolute;left:3px;top:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .15s}.tog:checked{background:var(--ok)}.tog:checked::after{left:21px}
+.pdet{margin-top:14px;background:var(--panel);border-radius:16px;padding:4px 14px}.pdet>summary{cursor:pointer;font-weight:700;padding:12px 0;list-style-position:outside}.pdet .plist2{background:transparent;margin:0 -14px 6px}
 .composer textarea{border:1px solid var(--line);border-radius:14px;padding:11px 12px;font-size:16px;resize:none;min-height:48px;max-height:140px;background:var(--bg)}
 .welcome{color:var(--mute);font-size:15px}
 .welcome b{color:var(--ink)}
@@ -756,44 +775,57 @@ function paintWeight(box){
 /* ---------- PERFIL ---------- */
 function renderPerfil(){
   const host=$('#v-perfil');
-  if(host.contains(document.activeElement)&&document.activeElement.matches('input,select'))return;
-  const p=S.profile||{},T=targets();
-  const sel=(n,opts,v)=>`<select name="${n}">${opts.map(([k,l])=>`<option value="${k}" ${String(v)===String(k)?'selected':''}>${l}</option>`).join('')}</select>`;
+  if(host.contains(document.activeElement)&&document.activeElement.matches('input:not([type=radio]):not([type=checkbox]),select'))return;
+  const p=S.profile||{},T=targets(),cw=curWeight(),gw=num(p.goalWeight),sw=num(p.weight);
+  const seg=(n,opts,v,cls)=>`<div class="seg ${cls||''}">${opts.map(([k,l,sub])=>`<label class="${String(v)===String(k)?'on':''}"><input type="radio" name="${n}" value="${k}" ${String(v)===String(k)?'checked':''}><b>${l}</b>${sub?`<small>${sub}</small>`:''}</label>`).join('')}</div>`;
+  const row=(l,inp)=>`<label class="prow"><span>${l}</span>${inp}</label>`;
+  const nin=(n,v,u,st,ph)=>`<span class="pin"><input name="${n}" type="number" inputmode="decimal" step="${st||1}" value="${esc(v??'')}" placeholder="${ph||'—'}">${u?`<em>${u}</em>`:''}</span>`;
+  let prog='';if(cw&&gw&&sw&&sw!==gw){const done=Math.max(0,Math.min(1,(sw-cw)/(sw-gw)));prog=`<div class="pgoal"><div class="pgl"><span>${dec(sw)} kg</span><b>${dec(cw)} kg</b><span>${dec(gw)} kg</span></div><div class="t"><i style="width:${(done*100).toFixed(0)}%"></i></div><small>${Math.round(done*100)} % del camino · faltan ${dec(Math.abs(cw-gw))} kg</small></div>`}
+  else if(cw&&gw)prog=`<div class="pgoal"><small>Peso actual ${r1(cw)} kg · objetivo ${r1(gw)} kg</small></div>`;
   host.innerHTML=`
-  <h2 style="font-size:clamp(30px,5vw,44px);font-weight:800;margin-bottom:6px">Perfil y objetivos</h2>
-  <p class="hint" style="margin:0 0 16px">Se usa para calcular tus calorías (fórmula Mifflin-St Jeor) y para que el asistente te conozca.</p>
-  <div class="hero">
-  <form class="card form" id="f-prof" style="align-content:start">
-    <label>Sexo${sel('sex',[['','—'],['h','Hombre'],['m','Mujer']],p.sex||'')}</label>
-    <label>Edad<input name="age" type="number" inputmode="numeric" value="${esc(p.age??'')}"></label>
-    <label>Altura (cm)<input name="height" type="number" inputmode="numeric" value="${esc(p.height??'')}"></label>
-    <label>Peso inicial (kg)<input name="weight" type="number" inputmode="decimal" step="0.1" value="${esc(p.weight??'')}"></label>
-    <label>Peso objetivo (kg)<input name="goalWeight" type="number" inputmode="decimal" step="0.1" value="${esc(p.goalWeight??'')}"></label>
-    <label class="half">Actividad${sel('activity',[['1.2','Sedentario (oficina, sin entrenar)'],['1.375','Ligera (1–3 entrenos/sem.)'],['1.55','Moderada (3–5 entrenos/sem.)'],['1.725','Alta (6–7 entrenos/sem.)'],['1.9','Muy alta (trabajo físico + entreno)']],p.activity||'1.375')}</label>
-    <label class="half">Objetivo${sel('goal',[['perder','Perder grasa (−500 kcal, ~0,5 kg/sem.)'],['suave','Definir suave (−300 kcal)'],['mantener','Mantener / recomposición'],['ganar','Ganar músculo (+250 kcal)']],p.goal||'mantener')}</label>
-    <label>Proteína (g/kg)<input name="protPerKg" type="number" inputmode="decimal" step="0.1" value="${esc(p.protPerKg??'2')}"></label>
-    <label>kcal manual<input name="kcalOverride" type="number" inputmode="numeric" placeholder="auto" value="${esc(p.kcalOverride??'')}"></label>
-    <label class="full check"><input type="checkbox" name="addExercise" ${p.addExercise?'checked':''}> Sumar las kcal del ejercicio y los pasos al objetivo del día. Déjalo desactivado si tu nivel de actividad ya cuenta tus entrenos.</label>
-    <label class="full">Notas para el asistente<input name="notes" placeholder="Ej.: no como pescado, entreno a las 19:00" value="${esc(p.notes??'')}"></label>
-  </form>
-  <div class="card">
-    <h3 style="font-size:20px;font-weight:800">Tu cálculo</h3>
-    <div class="calc">
-      <div><span>Metabolismo basal (TMB)</span><b>${T.bmr?fmt(T.bmr)+' kcal':'falta sexo, edad, altura y peso'}</b></div>
-      <div><span>Gasto diario (TMB × actividad)</span><b>${T.tdee?fmt(T.tdee)+' kcal':'—'}</b></div>
-      <div><span>Ajuste por objetivo</span><b>${T.adj>0?'+':''}${T.adj} kcal</b></div>
-      <div><span>Objetivo diario</span><b style="color:var(--hot)">${fmt(T.kcal)} kcal</b></div>
-      <div><span>Proteína (${num(p.protPerKg)||2} g × ${r1(T.w)} kg)</span><b>${T.p} g</b></div>
-      <div><span>Grasa (0,8 g/kg)</span><b>${T.f} g</b></div>
-      <div><span>Carbohidratos (resto)</span><b>${T.c} g</b></div>
-      <div><span>Agua (35 ml/kg)</span><b>${fmt(T.water)} ml</b></div>
+  <h2 class="ttl">Perfil</h2>
+  <div class="ptarget card">
+    <small>Tu objetivo diario</small>
+    <div class="pk"><b>${fmt(T.kcal)}</b><span>kcal</span></div>
+    <div class="pmac"><div style="--k:var(--p)"><b>${T.p} g</b><span>Proteína</span></div><div style="--k:var(--c)"><b>${T.c} g</b><span>Carbos</span></div><div style="--k:var(--f)"><b>${T.f} g</b><span>Grasa</span></div><div style="--k:var(--water)"><b>${r1(T.water/1000).toString().replace('.',',')} L</b><span>Agua</span></div></div>
+    ${!T.ok?`<p class="hint" style="margin:10px 0 0">Completa tus datos abajo para calcularlo.</p>`:prog}
+  </div>
+  <form id="f-prof" class="pform" autocomplete="off">
+    <h3 class="psec">Objetivo</h3>
+    ${seg('goal',[['perder','Perder grasa','−500 kcal'],['suave','Definir','−300 kcal'],['mantener','Mantener','±0'],['ganar','Ganar músculo','+250 kcal']],p.goal||'mantener','two')}
+    <h3 class="psec">Actividad diaria</h3>
+    ${seg('activity',[['1.2','Sedentario','sin entrenar'],['1.375','Ligera','1–3 días'],['1.55','Moderada','3–5 días'],['1.725','Alta','6–7 días'],['1.9','Muy alta','+ trabajo físico']],p.activity||'1.375')}
+    <h3 class="psec">Tus datos</h3>
+    <div class="plist2">
+      <div class="prow"><span>Sexo</span><div class="seg mini">${[['h','Hombre'],['m','Mujer']].map(([k,l])=>`<label class="${p.sex===k?'on':''}"><input type="radio" name="sex" value="${k}" ${p.sex===k?'checked':''}><b>${l}</b></label>`).join('')}</div></div>
+      ${row('Edad',nin('age',p.age,'años'))}
+      ${row('Altura',nin('height',p.height,'cm'))}
+      ${row('Peso inicial',nin('weight',p.weight,'kg','0.1'))}
+      ${row('Peso objetivo',nin('goalWeight',p.goalWeight,'kg','0.1'))}
     </div>
-    <p class="hint">Se recalcula con tu último peso apuntado. Mínimo de seguridad: ${fmt(T.floor)} kcal. Revisa cada 2–3 semanas: si el peso no se mueve como esperas, ajusta ±150 kcal.</p>
-    <p class="hint">Datos: ${S.mode==='nube'?'guardados en tu cuenta de Claude, privados (solo tú los ves).':'solo en este navegador.'}</p>
-    ${WEB?`<label class="hint" style="display:grid;gap:4px">Contraseña del asistente (solo si pusiste APP_PASSWORD en Vercel)<input id="apppass" type="password" autocomplete="current-password" value="${esc(getPass())}" style="border:1px solid var(--line);border-radius:10px;padding:9px 10px;font-size:16px;background:var(--bg);color:var(--ink)"></label>`:''}
-    <p class="hint"><b>Como app en el móvil:</b> ábrela en la app de Claude, o en Safari o Chrome con tu cuenta de Claude y pulsa Compartir → «Añadir a pantalla de inicio».</p>
-    <button class="btn ghost" type="button" id="clearchat">Borrar conversación del asistente</button>
-  </div></div>`;
+    <details class="pdet"><summary>Ajustes avanzados</summary><div class="plist2">
+      ${row('Proteína por kg',nin('protPerKg',p.protPerKg??2,'g/kg','0.1'))}
+      ${row('kcal fijas',nin('kcalOverride',p.kcalOverride,'kcal',1,'auto'))}
+      <label class="prow"><span>Sumar ejercicio y pasos al objetivo<small>Desactívalo si tu actividad ya cuenta tus entrenos.</small></span><input class="tog" type="checkbox" name="addExercise" ${p.addExercise?'checked':''}></label>
+      <label class="prow col"><span>Notas para el asistente</span><input name="notes" class="ptxt" placeholder="Ej.: no como pescado, entreno a las 19:00" value="${esc(p.notes??'')}"></label>
+    </div></details>
+  </form>
+  <details class="pdet"><summary>Cómo se calcula</summary>
+    <div class="calc">
+      <div><span>Metabolismo basal (Mifflin-St Jeor)</span><b>${T.bmr?fmt(T.bmr)+' kcal':'faltan datos'}</b></div>
+      <div><span>× actividad = gasto diario</span><b>${T.tdee?fmt(T.tdee)+' kcal':'—'}</b></div>
+      <div><span>Ajuste por objetivo</span><b>${T.adj>0?'+':''}${T.adj} kcal</b></div>
+      <div><span>Proteína (${num(p.protPerKg)||2} g × ${r1(T.w)} kg)</span><b>${T.p} g</b></div>
+      <div><span>Grasa (0,8 g/kg) · carbos el resto</span><b>${T.f} g · ${T.c} g</b></div>
+    </div>
+    <p class="hint">Se recalcula con tu último peso. Mínimo de seguridad: ${fmt(T.floor)} kcal. Si en 2–3 semanas el peso no se mueve como esperas, ajusta ±150 kcal.</p>
+  </details>
+  <details class="pdet"><summary>App y datos</summary>
+    <p class="hint">Datos: ${S.mode==='nube'?'guardados en tu cuenta de Claude, privados.':'solo en este navegador.'}</p>
+    <p class="hint"><b>Como app en el móvil:</b> en Safari o Chrome pulsa Compartir → «Añadir a pantalla de inicio».</p>
+    ${WEB?`<label class="prow col"><span>Contraseña del asistente <small>solo si pusiste APP_PASSWORD en Vercel</small></span><input id="apppass" class="ptxt" type="password" autocomplete="current-password" value="${esc(getPass())}"></label>`:''}
+    <button class="btn ghost" type="button" id="clearchat" style="margin-top:10px">Borrar conversación del asistente</button>
+  </details>`;
 }
 
 /* ---------- CHAT ---------- */
@@ -951,7 +983,7 @@ function addFromItem(it,a,skipLib){
   if(!skipLib)upsertLib([{...it,def:a}]);
   toast(`Añadido a ${mealName(shMeal)}: ${it.name}, ${v.kcal} kcal`);shPick=null;$('#shq').value='';renderSheet();renderHoy();renderProg();
 }
-const PB={open:false,id:null,name:'',serv:1,ings:[]};let LIBQ='',LIBALL=false,PMEAL=null;
+const PB={open:false,id:null,name:'',serv:1,ings:[]};let LIBQ='',LIBALL=false,PMEAL=null,PDATE=null;
 const platos=()=>libItems().filter(x=>x.kind==='plato').sort((a,b)=>(b.uses||0)-(a.uses||0));
 function pbTot(){const t={kcal:0,p:0,c:0,f:0};for(const x of PB.ings){t.kcal+=x.kcal;t.p+=x.p;t.c+=x.c;t.f+=x.f}const n=Math.max(1,+PB.serv||1);return{kcal:r0(t.kcal/n),p:r1(t.p/n),c:r1(t.c/n),f:r1(t.f/n),all:r0(t.kcal)}}
 function pbTotHtml(){const t=pbTot();return`<b>${fmt(t.kcal)} kcal</b> por ración · P ${dec(t.p)} · C ${dec(t.c)} · G ${dec(t.f)}${+PB.serv>1?` <small>(total ${fmt(t.all)} kcal)</small>`:''}`}
@@ -972,7 +1004,8 @@ function renderLib(){
   const q=norm(LIBQ),w=q.split(/\s+/).filter(Boolean),shown=q?all.filter(x=>w.every(k=>norm(x.name).includes(k))).slice(0,30):LIBALL?all:[];
   if(!PMEAL)PMEAL=mealNow();
   host.innerHTML=`<h2 class="ttl">Alimentos</h2>
-  <div class="secthead" style="margin-top:6px"><h2>Mis platos</h2><label class="pmeal">Añadir a <select id="pmeal">${MEALS.map(([k,n])=>`<option value="${k}" ${k===PMEAL?'selected':''}>${n}</option>`).join('')}</select></label></div>
+  <div class="secthead" style="margin-top:6px"><h2>Mis platos</h2></div>
+  <div class="pwhere"><span>Se añaden a</span><select id="pmeal" aria-label="Comida">${MEALS.map(([k,n])=>`<option value="${k}" ${k===PMEAL?'selected':''}>${n}</option>`).join('')}</select><span>del</span><input type="date" id="pdate" aria-label="Día" value="${PDATE||S.date}" max="${addDays(today(),7)}"></div>
   ${PB.open?builderHtml():`<button class="btn hot addbig" data-pbnew="1">+ Crear plato</button>`}
   <div class="plist">${pl.length?pl.map(x=>`<div class="plato"><div class="pinfo"><b>${esc(x.name)}</b><small>${fmt(x.kcal)} kcal · P ${dec(x.p)} · C ${dec(x.c)} · G ${dec(x.f)}${x.ings&&x.ings.length?` · ${x.ings.length} ingr.`:''}</small></div>
     <button type="button" class="btn hot padd" data-addplato="${esc(x.id)}">+ Añadir</button>
@@ -999,10 +1032,10 @@ function pbSave(f){const fd=new FormData(f),name=String(fd.get('name')||'').trim
   const rec={kind:'plato',name,unit:'ración',base:1,def:1,label:'1 ración',kcal:t.kcal,p:t.p,c:t.c,f:t.f,serv:PB.serv,ings:PB.ings.map(x=>({name:x.name,amt:x.amt,unit:x.unit,kcal:x.kcal,p:x.p,c:x.c,f:x.f,src:x.src}))};
   const e=PB.id&&items.find(x=>x.id===PB.id);if(e)Object.assign(e,rec);else items.push({...rec,id:uid(),uses:0,last:today()});
   S.lib={items:items.slice(-300)};save('library',S.lib);toast('Plato guardado: '+name+', '+fmt(t.kcal)+' kcal por ración');Object.assign(PB,{open:false,id:null,name:'',serv:1,ings:[]});document.activeElement&&document.activeElement.blur();renderLib()}
-function addPlato(id){const it=libItems().find(x=>x.id===id);if(!it)return;const meal=PMEAL||mealNow();const d=editDay(S.date);
-  d.foods.push({id:uid(),meal,name:it.name,qty:'1 ración',kcal:r0(it.kcal),p:r1(it.p),c:r1(it.c),f:r1(it.f)});saveDay(S.date);
+function addPlato(id){const it=libItems().find(x=>x.id===id);if(!it)return;const meal=PMEAL||mealNow(),date=/^\d{4}-\d{2}-\d{2}$/.test(PDATE||'')?PDATE:S.date;const d=editDay(date);
+  d.foods.push({id:uid(),meal,name:it.name,qty:'1 ración',kcal:r0(it.kcal),p:r1(it.p),c:r1(it.c),f:r1(it.f)});saveDay(date);
   const items=(S.lib.items||[]).map(x=>x.id===id?{...x,uses:(x.uses||0)+1,last:today()}:x);S.lib={items};save('library',S.lib);
-  toast(`Añadido a ${mealName(meal)}: ${it.name}, ${fmt(it.kcal)} kcal`);renderHoy();renderProg();renderLib()}
+  toast(`Añadido a ${mealName(meal)}${date===today()?' de hoy':' del '+parse(date).toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'short'})}: ${it.name}, ${fmt(it.kcal)} kcal`);renderHoy();renderProg();renderLib()}
 const ERR={no_key:'Falta la clave gratuita de Gemini en Vercel (GEMINI_API_KEY). Mira el README.',bad_password:'Contraseña incorrecta. Escríbela en Perfil.',api_error:'Error del servidor de IA. Prueba en un momento.',busy:'Los servidores gratuitos de Google están saturados ahora mismo. Prueba en un minuto.',not_granted:'Necesito permiso para usar Claude. Ábrelo desde Claude y acepta el aviso.',rate_limited:'Has llegado al límite gratuito por ahora. Espera un rato y vuelve a probar.',session_expired:'Tu sesión ha caducado. Recarga la página.',sampling_disabled:'El asistente no está disponible en esta cuenta.',refused:'No puedo responder a eso.',prompt_too_large:'La conversación es muy larga. Borra el chat en Perfil.'};
 let PHOTO=null;
 function shrink(file,max,q){return new Promise((ok,bad)=>{const u=URL.createObjectURL(file),im=new Image();im.onload=()=>{const k=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);c.toBlob(b=>b?ok({blob:b,url:c.toDataURL('image/jpeg',q)}):bad(),'image/jpeg',q)};im.onerror=()=>{URL.revokeObjectURL(u);bad()};im.src=u})}
@@ -1134,7 +1167,7 @@ document.addEventListener('change',e=>{
     for(const k of['sex','activity','goal','notes'])p[k]=String(fd.get(k)||'').slice(0,300);
     for(const k of['age','height','weight','goalWeight','protPerKg','kcalOverride'])p[k]=num(fd.get(k));
     p.addExercise=fd.get('addExercise')==='on';S.profile=p;save('profile',p);renderHoy();
-    const a=document.activeElement;a&&a.blur&&a.matches('select,[type=checkbox]')&&a.blur();renderPerfil()}
+    const a=document.activeElement;a&&a.blur&&a.matches('select,[type=checkbox],[type=radio]')&&a.blur();renderPerfil()}
 });
 document.addEventListener('focusout',()=>setTimeout(()=>{if(deferHoy&&!$('#v-hoy').contains(document.activeElement)){deferHoy=false;renderHoy()}},0));
 document.addEventListener('submit',e=>{const mf=e.target.closest&&e.target.closest('[data-mcopy],[data-msave]');
@@ -1183,7 +1216,7 @@ document.addEventListener('click',e=>{const pb=e.target.closest&&e.target.closes
   if(b.dataset.phday){PH.sel=b.dataset.phday;renderProg()}
   if(b.dataset.phmon){PH.m+=+b.dataset.phmon;if(PH.m<0){PH.m=11;PH.y--}if(PH.m>11){PH.m=0;PH.y++}renderProg()}
   if(b.dataset.phdel){if(b.dataset.sure){delPhoto(PH.sel,b.dataset.phdel)}else{b.dataset.sure='1';b.textContent='¿Borrar?';b.classList.add('sure');setTimeout(()=>{if(b.isConnected){delete b.dataset.sure;b.textContent='×';b.classList.remove('sure')}},3000)}}});
-document.addEventListener('change',e=>{if(e.target.id==='pmeal'){PMEAL=e.target.value;return}if(e.target.id==='phin'){const f=[...(e.target.files||[])];e.target.value='';addPhotos(PH.sel,f)}if(e.target.id==='phcmp'){PH.cmp=e.target.value;renderProg()}});
+document.addEventListener('change',e=>{if(e.target.id==='pmeal'){PMEAL=e.target.value;return}if(e.target.id==='pdate'){PDATE=e.target.value;e.target.blur();return}if(e.target.id==='phin'){const f=[...(e.target.files||[])];e.target.value='';addPhotos(PH.sel,f)}if(e.target.id==='phcmp'){PH.cmp=e.target.value;renderProg()}});
 $('#q').addEventListener('input',e=>{e.target.style.height='';e.target.style.height=Math.min(140,e.target.scrollHeight)+'px'});
 $('#q').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&innerWidth>=700){e.preventDefault();$('#composer').requestSubmit()}});
 addEventListener('resize',()=>{if(innerWidth>=1000&&document.body.dataset.view==='chat')go('hoy')});
