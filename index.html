@@ -965,7 +965,7 @@ function offQueue(w,q){q=String(q||'').trim();clearTimeout(offT);OFFQ[w]=q.lengt
 async function offAI(w){const q=OFFQ[w];if(!q||!sample)return;OFFST[w]='ai';offPaint(w);
   try{const o=await sample.json(`El usuario busca «${q}» para apuntarlo en su diario (está en España). Puede estar mal escrito: interpreta qué producto es. Da hasta 4 opciones reales del supermercado español (marcas como Hacendado/Mercadona, Carrefour, Dia, Lidl o marcas conocidas) con valores nutricionales por 100 g tal como vienen en la etiqueta, y la ración típica en gramos. Si no conoces la marca exacta, da el valor genérico. Responde SOLO JSON: {"productos":[{"nombre":"","marca":"","kcal":0,"proteina":0,"carbohidratos":0,"grasa":0,"racion_g":0}]}`,{cache:false});
     const arr=(o&&Array.isArray(o.productos)?o.productos:[]).slice(0,4);
-    OFFR[w]=arr.map(x=>{const k=Number(x.kcal);if(!(k>=0&&k<950))return null;const nm=[String(x.nombre||q).trim(),String(x.marca||'').trim()].filter(Boolean).join(' · ').slice(0,80);
+    OFFR[w]=arr.map(x=>{const k=Number(x.kcal);if(!(k>=0&&k<950))return null;const n0=String(x.nombre||q).trim(),mb=String(x.marca||'').trim(),nm=(mb&&!norm(n0).includes(norm(mb))?n0+' · '+mb:n0).slice(0,80);
       return{ai:true,name:nm,unit:'g',base:100,def:Number(x.racion_g)>0&&Number(x.racion_g)<2000?r0(x.racion_g):100,label:'IA aprox. · 100 g = '+r0(k)+' kcal',kcal:r0(k),p:r1(Number(x.proteina)||0),c:r1(Number(x.carbohidratos)||0),f:r1(Number(x.grasa)||0)}}).filter(Boolean);OFFST[w]=''}
   catch(e){OFFST[w]='';OFFR[w]=[];toast(ERR[e&&e.code]||'La IA no ha podido calcularlo.')}offPaint(w)}
 function offPick(key){const [w,i]=key.split(':'),x=OFFR[w]&&OFFR[w][+i];if(!x)return;
