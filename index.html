@@ -206,6 +206,22 @@ details.add summary{cursor:pointer;font-weight:600;padding:10px 0}
 .ptxt{border:1px solid var(--line);border-radius:10px;padding:10px;font-size:16px;background:var(--bg);color:var(--ink);width:100%}
 .tog{appearance:none;-webkit-appearance:none;width:46px;height:28px;border-radius:14px;background:var(--line);position:relative;flex:none;cursor:pointer;transition:background .15s}.tog::after{content:'';position:absolute;left:3px;top:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .15s}.tog:checked{background:var(--ok)}.tog:checked::after{left:21px}
 .pdet{margin-top:14px;background:var(--panel);border-radius:16px;padding:4px 14px}.pdet>summary{cursor:pointer;font-weight:700;padding:12px 0;list-style-position:outside}.pdet .plist2{background:transparent;margin:0 -14px 6px}
+.mopen{border:0;background:none;padding:0;text-align:left;font:inherit;color:inherit;cursor:pointer;min-width:0}.mopen span{display:block;font-size:16px}.mopen small{color:var(--ok);font-size:14px}
+.fd{position:fixed;inset:0;z-index:9;background:rgba(0,0,0,.5);display:flex;justify-content:center}
+.fdin{background:var(--bg);width:100%;max-width:640px;height:100%;overflow-y:auto;padding:0 0 calc(24px + env(safe-area-inset-bottom,0px))}
+.fdtop{background:var(--panel);padding:calc(14px + env(safe-area-inset-top,0px)) 16px 16px;border-bottom:1px solid var(--line)}
+.fdback{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:28px;line-height:1;cursor:pointer}
+.fdtop h2{font-size:clamp(24px,6vw,32px);font-weight:800;margin-top:12px}
+.fdform{display:grid;gap:10px;padding:18px 16px}.fdlab{font-size:13px;letter-spacing:.04em;color:var(--mute);margin:0}
+.fdrow{display:grid;grid-template-columns:34px minmax(0,1fr);align-items:center;gap:8px}.fdrow span{color:var(--mute);font-size:20px;text-align:center}
+.fdrow input,.fdrow select{width:100%;border:0;border-radius:12px;background:var(--panel);color:var(--ink);font:inherit;font-size:18px;font-weight:700;padding:13px 14px}
+.fdsave{width:100%;padding:14px;font-size:17px}
+.fdgrid{display:grid;grid-template-columns:1fr 1fr;gap:2px;background:var(--bg)}.fdgrid div{background:var(--panel);text-align:center;padding:12px 6px;display:grid}.fdgrid small{color:var(--mute);font-size:14px}.fdgrid b{font-size:20px}.fdgrid em{font-style:normal;color:var(--mute);font-weight:600;font-size:16px}
+.fdh{font-size:clamp(24px,7vw,32px);font-weight:900;margin:22px 16px 6px;border-bottom:1px solid var(--line);padding-bottom:8px}
+.fdt{width:calc(100% - 32px);margin:0 16px;border-collapse:collapse;font-size:16px}.fdt th{text-align:left;font-weight:700;padding:9px 0}.fdt td{text-align:right;padding:9px 0 9px 10px;font-weight:700;vertical-align:top}.fdt td span{font-weight:500;color:var(--mute)}
+.fdt tr{border-bottom:1px solid var(--line)}.fdt tr.por{border-bottom:10px solid var(--panel)}.fdt tr.hd td{font-weight:800;font-size:14px}
+#fdbody .hint{margin:10px 16px}.fddel{margin:18px 16px 0;width:calc(100% - 32px)}
+.qa{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:10px 0}.qa button{display:grid;justify-items:center;gap:4px;border:0;border-radius:14px;background:var(--panel);color:var(--ink);font:inherit;font-size:12px;font-weight:600;padding:10px 4px;cursor:pointer;line-height:1.2}.qa svg{color:var(--hot)}
 .composer textarea{border:1px solid var(--line);border-radius:14px;padding:11px 12px;font-size:16px;resize:none;min-height:48px;max-height:140px;background:var(--bg)}
 .welcome{color:var(--mute);font-size:15px}
 .welcome b{color:var(--ink)}
@@ -362,10 +378,12 @@ svg text{font:13px Archivo,system-ui,sans-serif;fill:var(--mute)}
   <button data-v="prog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19l5-6 4 3 7-9"/></svg>Progreso</button>
   <button data-v="perfil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>Perfil</button>
 </nav>
+<div class="fd" id="fd" hidden></div>
 <div class="sheet" id="sheet" hidden>
   <div class="sheetin" role="dialog" aria-label="Añadir alimento">
     <div class="sh-head"><h2>Añadir alimento</h2><button class="x" id="shclose" type="button" aria-label="Cerrar">×</button></div>
     <div class="chips" id="shmeal"></div>
+    <div class="qa"><button type="button" data-qa="scan"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7V4h3M21 7V4h-3M3 17v3h3M21 17v3h-3M7 8v8M10 8v8M13 8v8M17 8v8"/></svg>Código de barras</button><button type="button" data-qa="photo"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Foto con IA</button><button type="button" data-qa="chat"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg>Asistente</button><button type="button" data-qa="platos"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="7"/><path d="M5 5v4M3 5v3a2 2 0 0 0 4 0V5M21 5c-2 0-3 2-3 5h3V5zM21 10v9"/></svg>Mis platos</button></div>
     <div class="shsearch"><input id="shq" type="search" autocomplete="off" placeholder="Busca: pollo, arroz, tu batido…"><button type="button" class="camb" id="scanbtn" title="Escanear código de barras" aria-label="Escanear código de barras"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7V4h3M21 7V4h-3M3 17v3h3M21 17v3h-3M7 8v8M10 8v8M13 8v8M17 8v8"/></svg></button></div>
     <div class="scan" id="scan" hidden>
       <div class="scanv"><video id="scanvid" playsinline muted></video><i></i></div>
@@ -477,6 +495,54 @@ function balanceCard(date){const B=balance(date);
   <div class="eq"><div><b>${fmt(B.eat)}</b>Comido</div><i>−</i><div><b>${fmt(B.out)}</b>Quemado</div><i>=</i><div class="${cls}"><b>${sgn(B.bal)}</b>${B.bal<0?'Déficit':B.bal>0?'Superávit':'Equilibrio'}</div></div>
   <p class="hint" style="margin:8px 0 0">Quemado = cuerpo en reposo ${fmt(B.bmr)} + digestión ${fmt(B.dig)} + ejercicio ${fmt(B.ex)} + pasos ${fmt(B.st)}.${date===today()?' El de hoy cambia según apuntes.':''}</p></div>`}
 
+/* ---------- FICHA DE ALIMENTO (editar cantidad) ---------- */
+const IR={kcal:2000,f:70,c:260,p:50};let FD=null;
+function fdInit(id){const x=day(S.date).foods.find(y=>y.id===id);if(!x)return null;
+  const q=String(x.qty||'').trim(),mg=q.match(/^(\d+(?:[.,]\d+)?)\s*g$/i),mr=q.match(/^(\d+(?:[.,]\d+)?)\s*×\s*(.+)$/);
+  let amt,unit,per,label,g0=null;
+  if(x.amt>0&&x.unit){amt=x.amt;unit=x.unit;label=x.ulabel||'ración';g0=x.g0||null}
+  else if(mg){amt=parseFloat(mg[1].replace(',','.'));unit='g'}
+  else if(mr){amt=parseFloat(mr[1].replace(',','.'));unit='r';label=mr[2]}
+  else{amt=1;unit='r';label=q||'1 ración'}
+  if(!(amt>0))amt=1;
+  per={kcal:x.kcal/amt,p:x.p/amt,c:x.c/amt,f:x.f/amt};
+  // gramos de una ración / valores por gramo, si se conocen
+  const nx=norm(x.name).split(' · ')[0],gi=(S.lib.items||[]).filter(i=>i.unit==='g'),lib=gi.find(i=>norm(i.name)===norm(x.name))||BASEI.find(i=>norm(i.name)===nx)||gi.find(i=>norm(i.name).startsWith(nx))||BASEI.find(i=>norm(i.name).startsWith(nx)||nx.startsWith(norm(i.name)));
+  let pg=null;if(unit==='g')pg=per;else if(lib){pg={kcal:lib.kcal/lib.base,p:lib.p/lib.base,c:lib.c/lib.base,f:lib.f/lib.base};if(!g0&&pg.kcal>0)g0=r0(per.kcal/pg.kcal)}
+  if(unit==='g'&&!label)label='ración';
+  return{id,meal:x.meal||"snack",name:x.name,amt,unit,_u:unit,per,pg,label:label||"ración",g0}}
+function fdVals(){const F=FD,a=num($('#fdamt')?.value)??F.amt,u=$('#fdunit')?.value||F.unit;
+  const base=u==='g'?(F.pg||F.per):F.unit==='r'?F.per:(F.g0&&F.pg?{kcal:F.pg.kcal*F.g0,p:F.pg.p*F.g0,c:F.pg.c*F.g0,f:F.pg.f*F.g0}:F.per);
+  return{a,u,kcal:r0(base.kcal*a),p:r1(base.p*a),c:r1(base.c*a),f:r1(base.f*a)}}
+function fdBody(){const v=fdVals(),T=targets(),grams=v.u==='g'?v.a:(FD.g0?FD.g0*v.a:null),ir=(n,k)=>Math.round(n/IR[k]*100)+'%';
+  return`<div class="fdgrid"><div><small>Calorías</small><b>${fmt(v.kcal)} <em>(${T.kcal?Math.round(v.kcal/T.kcal*100):0}%)</em></b></div><div><small>Grasa</small><b>${dec(v.f)} g</b></div><div><small>Carbh</small><b>${dec(v.c)} g</b></div><div><small>Proteína</small><b>${dec(v.p)} g</b></div></div>
+  <h3 class="fdh">Información nutricional</h3>
+  <table class="fdt"><tr class="por"><th>Porción de</th><td colspan="2">${grams?fmt(r0(grams))+' g':esc(v.a===1?FD.label:dec(v.a)+' × '+FD.label)}</td></tr>
+  <tr class="hd"><th></th><td>Por porción</td><td>% IR*</td></tr>
+  <tr><th>Energía</th><td>${fmt(r0(v.kcal*4.184))} kJ<br><span>${fmt(v.kcal)} kcal</span></td><td>${ir(v.kcal,'kcal')}</td></tr>
+  <tr><th>Grasas</th><td>${dec(v.f)} g</td><td>${ir(v.f,'f')}</td></tr>
+  <tr><th>Hidratos de carbono</th><td>${dec(v.c)} g</td><td>${ir(v.c,'c')}</td></tr>
+  <tr><th>Proteínas</th><td>${dec(v.p)} g</td><td>${ir(v.p,'p')}</td></tr></table>
+  <p class="hint">* Ingesta de referencia de un adulto medio (2.000 kcal). Tu objetivo: ${fmt(T.kcal)} kcal.${grams&&v.u!=='g'?'':''}</p>`}
+function openFood(id){FD=fdInit(id);if(!FD)return;const F=FD;
+  const units=[];if(F.pg||F.unit==='g')units.push(['g','g']);if(F.unit==='r')units.push(['r',F.label]);else if(F.g0)units.push(['r','ración ('+fmt(F.g0)+' g)']);
+  $('#fd').innerHTML=`<div class="fdin" role="dialog" aria-label="${esc(F.name)}">
+    <div class="fdtop"><button type="button" class="fdback" data-fdclose="1" aria-label="Volver">‹</button><h2>${esc(F.name)}</h2></div>
+    <form id="f-fd" class="fdform"><p class="fdlab">EDITAR EN EL DIARIO</p>
+      <label class="fdrow"><span aria-hidden="true">±</span><input id="fdamt" type="number" inputmode="decimal" min="0" step="any" value="${r1(F.amt)}" aria-label="Cantidad"></label>
+      <label class="fdrow"><span aria-hidden="true">☰</span><select id="fdunit" aria-label="Unidad">${units.map(([k,l])=>`<option value="${k}" ${k===F.unit?'selected':''}>${esc(l)}</option>`).join('')}</select></label>
+      <label class="fdrow"><span aria-hidden="true">◷</span><select id="fdmeal" aria-label="Comida">${MEALS.map(([k,n])=>`<option value="${k}" ${k===F.meal?'selected':''}>${n}</option>`).join('')}</select></label>
+      <button class="btn hot fdsave">Guardar</button></form>
+    <div id="fdbody">${fdBody()}</div>
+    <button type="button" class="btn ghost fddel" data-fddel="1">Borrar del diario</button></div>`;
+  $('#fd').hidden=false;document.body.classList.add('noscroll')}
+function closeFood(){$('#fd').hidden=true;$('#fd').innerHTML='';FD=null;if($('#sheet').hidden)document.body.classList.remove('noscroll')}
+function saveFood(){if(!FD)return;const v=fdVals();if(!(v.a>0)){toast('Pon una cantidad.');return}
+  const d=editDay(S.date),x=d.foods.find(y=>y.id===FD.id);if(!x)return closeFood();
+  const label=v.u==='g'?null:(FD.unit==='r'?FD.label:'ración');
+  Object.assign(x,{meal:$('#fdmeal').value,kcal:v.kcal,p:v.p,c:v.c,f:v.f,amt:v.a,unit:v.u,ulabel:label,g0:FD.g0||null,qty:v.u==='g'?`${r1(v.a)} g`:(v.a===1?label:`${String(r1(v.a)).replace('.',',')} × ${label}`)});
+  saveDay(S.date);toast(`Guardado: ${x.name}, ${fmt(x.kcal)} kcal`);closeFood();renderHoy();renderProg()}
+
 /* ---------- DIARIO DE COMIDAS ---------- */
 const MOPEN={};let DIAHIDE=false,MACT=null;
 const MICON={
@@ -498,7 +564,7 @@ function diaryHtml(d,t,T,foodsBy){
       <div class="mhead"><i class="mico">${MICON[m.k]}</i><button type="button" class="mname" ${has?`data-mtog="${m.k}"`:`data-sheet="${m.k}"`}>${MNAME[m.k]}</button>
         ${has?`<div class="mk"><b>${fmt(m.kc)}</b><small>Calorías</small></div>`:'<span></span>'}<button type="button" class="mplus" data-sheet="${m.k}" aria-label="Añadir a ${MNAME[m.k]}">+</button></div>
       ${has?`<button type="button" class="msum" data-mtog="${m.k}" aria-expanded="${!!open}">${mrow(sum('f'),sum('c'),sum('p'),m.kc,T)}<em>${open?'▴':'▾'}</em></button>`:''}
-      ${open?`${m.it.map(x=>`<div class="mitem"><div class="mi1"><div><span>${esc(x.name)}</span>${x.qty?`<small>${esc(x.qty)}</small>`:''}</div><b>${fmt(x.kcal)}</b><button class="x" data-del-food="${esc(x.id)}" aria-label="Borrar ${esc(x.name)}">×</button></div>${mrow(x.f,x.c,x.p,x.kcal,T,'sm')}</div>`).join('')}
+      ${open?`${m.it.map(x=>`<div class="mitem"><div class="mi1"><button type="button" class="mopen" data-fedit="${esc(x.id)}"><span>${esc(x.name)}</span>${x.qty?`<small>${esc(x.qty)}</small>`:''}</button><b>${fmt(x.kcal)}</b><button class="x" data-del-food="${esc(x.id)}" aria-label="Borrar ${esc(x.name)}">×</button></div>${mrow(x.f,x.c,x.p,x.kcal,T,'sm')}</div>`).join('')}
         <div class="mact"><button type="button" data-mact="copy:${m.k}">Copiar</button><button type="button" data-mact="save:${m.k}">Guardar comida</button><button type="button" data-mcam="${m.k}">Cámara</button></div>
         ${MACT==='copy:'+m.k?`<form class="mform" data-mcopy="${m.k}"><label>Copiar a<input type="date" name="to" value="${copyDef}" max="${tomorrow}" required></label><button class="btn hot">Copiar</button></form>`:''}
         ${MACT==='save:'+m.k?`<form class="mform" data-msave="${m.k}"><label>Nombre<input name="name" required maxlength="80" value="Mi ${esc(MNAME[m.k].split(' ')[0].toLowerCase())}"></label><button class="btn hot">Guardar</button></form>`:''}`:''}
@@ -1192,6 +1258,7 @@ $('#scanclose').addEventListener('click',stopScan);
 $('#scanimg').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];e.target.value='';try{SCAN&&SCAN.stop()}catch(x){}SCAN=null;scanImage(f)});
 $('#f-code').addEventListener('submit',e=>{e.preventDefault();e.stopPropagation();gotCode(new FormData(e.target).get('code'))});
 document.addEventListener('input',e=>{const el=e.target;
+  if(el.id==='fdamt'){$('#fdbody').innerHTML=fdBody();return}
   if(el.id==='pbq'){$('#pbres').innerHTML=pbResHtml();offQueue('pb',el.value);return}
   if(el.dataset&&el.dataset.pbamt!=null){const x=PB.ings[+el.dataset.pbamt];if(x){x.amt=num(el.value)||0;Object.assign(x,calc(x.src,x.amt));const row=el.closest('.pbing');if(row)row.querySelector('b').textContent=fmt(x.kcal);$('#pbtot').innerHTML=pbTotHtml()}return}
   if(el.form&&el.form.id==='f-plato'&&el.name==='serv'){PB.serv=el.value;$('#pbtot').innerHTML=pbTotHtml();return}
@@ -1213,7 +1280,8 @@ document.addEventListener('change',e=>{
     const a=document.activeElement;a&&a.blur&&a.matches('select,[type=checkbox],[type=radio]')&&a.blur();renderPerfil()}
 });
 document.addEventListener('focusout',()=>setTimeout(()=>{if(deferHoy&&!$('#v-hoy').contains(document.activeElement)){deferHoy=false;renderHoy()}},0));
-document.addEventListener('submit',e=>{const mf=e.target.closest&&e.target.closest('[data-mcopy],[data-msave]');
+document.addEventListener('submit',e=>{if(e.target.id==='f-fd'){e.preventDefault();saveFood();return}
+  const mf=e.target.closest&&e.target.closest('[data-mcopy],[data-msave]');
   if(mf){e.preventDefault();const k=mf.dataset.mcopy||mf.dataset.msave,items=day(S.date).foods.filter(x=>(x.meal||'snack')===k),fd=new FormData(mf);
     if(mf.dataset.mcopy){const to=String(fd.get('to')||'');if(!/^\d{4}-\d{2}-\d{2}$/.test(to))return;const d2=editDay(to);d2.foods.push(...items.map(x=>({...x,id:uid()})));saveDay(to);
       toast(`Copiado: ${items.length} ${items.length===1?'alimento':'alimentos'} a ${parse(to).toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'short'})}`)}
@@ -1237,7 +1305,16 @@ document.addEventListener('submit',e=>{const mf=e.target.closest&&e.target.close
   saveDay(S.date);document.activeElement&&document.activeElement.blur();deferHoy=false;renderHoy();renderProg();
 });
 $('#camin').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];e.target.value='';pickPhoto(f)});
-document.addEventListener('click',e=>{const ob=e.target.closest&&e.target.closest('[data-offpick],[data-offai]');if(ob){if(ob.dataset.offpick)offPick(ob.dataset.offpick);else offAI(ob.dataset.offai);return}
+document.addEventListener('click',e=>{const fb=e.target.closest&&e.target.closest('[data-fedit],[data-fdclose],[data-fddel],[data-qa]');
+  if(fb){const d=fb.dataset;if(d.fedit)openFood(d.fedit);if(d.fdclose)closeFood();
+    if(d.fddel){if(fb.dataset.sure){const dd=editDay(S.date);dd.foods=dd.foods.filter(x=>x.id!==FD.id);saveDay(S.date);closeFood();renderHoy();renderProg()}else{fb.dataset.sure='1';fb.textContent='Pulsa otra vez para borrar'}}
+    if(d.qa==='scan')startScan();
+    if(d.qa==='photo'){closeSheet();go('chat');$('#camin').click()}
+    if(d.qa==='chat'){closeSheet();go('chat');setTimeout(()=>$('#q').focus(),50)}
+    if(d.qa==='platos'){closeSheet();go('lib');scrollTo(0,0)}
+    return}
+  if(e.target.id==='fd'){closeFood();return}
+  const ob=e.target.closest&&e.target.closest('[data-offpick],[data-offai]');if(ob){if(ob.dataset.offpick)offPick(ob.dataset.offpick);else offAI(ob.dataset.offai);return}
   const pb=e.target.closest&&e.target.closest('[data-pbnew],[data-pbclose],[data-pbpick],[data-pbdel],[data-pbedit],[data-addplato],[data-liball]');
   if(pb){const d=pb.dataset;
     if(d.pbnew){Object.assign(PB,{open:true,id:null,name:'',serv:1,ings:[]});renderLib();setTimeout(()=>$('#f-plato input[name=name]')?.focus(),0)}
@@ -1260,7 +1337,7 @@ document.addEventListener('click',e=>{const ob=e.target.closest&&e.target.closes
   if(b.dataset.phday){PH.sel=b.dataset.phday;renderProg()}
   if(b.dataset.phmon){PH.m+=+b.dataset.phmon;if(PH.m<0){PH.m=11;PH.y--}if(PH.m>11){PH.m=0;PH.y++}renderProg()}
   if(b.dataset.phdel){if(b.dataset.sure){delPhoto(PH.sel,b.dataset.phdel)}else{b.dataset.sure='1';b.textContent='¿Borrar?';b.classList.add('sure');setTimeout(()=>{if(b.isConnected){delete b.dataset.sure;b.textContent='×';b.classList.remove('sure')}},3000)}}});
-document.addEventListener('change',e=>{if(e.target.id==='pmeal'){PMEAL=e.target.value;return}if(e.target.id==='pdate'){PDATE=e.target.value;e.target.blur();return}if(e.target.id==='phin'){const f=[...(e.target.files||[])];e.target.value='';addPhotos(PH.sel,f)}if(e.target.id==='phcmp'){PH.cmp=e.target.value;renderProg()}});
+document.addEventListener('change',e=>{if(e.target.id==='fdunit'){const F=FD,u=e.target.value,i=$('#fdamt'),a=num(i.value)||0;if(F.g0&&u!==F._u){i.value=u==='g'?r0(a*F.g0):r1(a/F.g0)}F._u=u;$('#fdbody').innerHTML=fdBody();return}if(e.target.id==='pmeal'){PMEAL=e.target.value;return}if(e.target.id==='pdate'){PDATE=e.target.value;e.target.blur();return}if(e.target.id==='phin'){const f=[...(e.target.files||[])];e.target.value='';addPhotos(PH.sel,f)}if(e.target.id==='phcmp'){PH.cmp=e.target.value;renderProg()}});
 $('#q').addEventListener('input',e=>{e.target.style.height='';e.target.style.height=Math.min(140,e.target.scrollHeight)+'px'});
 $('#q').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&innerWidth>=700){e.preventDefault();$('#composer').requestSubmit()}});
 addEventListener('resize',()=>{if(innerWidth>=1000&&document.body.dataset.view==='chat')go('hoy')});
